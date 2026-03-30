@@ -129,8 +129,7 @@ const sounds = [
   {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/choko.wav', name:{en:'Choko', ru:'Шоколад', uk:'Шоколад'}, color:'rgba(139,69,19,0.2)'},
   {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/strawberry.wav', name:{en:'Strawberry', ru:'Клубника', uk:'Полуниця'}, color:'rgba(255,105,180,0.2)'},
   {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/wax.wav', name:{en:'Wax', ru:'Воск', uk:'Віск'}, color:'rgba(255,165,0,0.2)'},
-  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/woodandrocks.wav', name:{en:'Wood & Rocks', ru:'Дерево и камни', uk:'Дерево і камені'}, color:'rgba(255,255,0,0.2)'},
-  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/bigpink.wav', name:{en:'Pink brush', ru:'Розовая щетка', uk:'Рожева щiтка'}, color:'rgba(255,182,193,0.2)'}
+  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/woodandrocks.wav', name:{en:'Wood & Rocks', ru:'Дерево и камни', uk:'Дерево і камені'}, color:'rgba(255,255,0,0.2)'}
 ];
 
 let lang='en', audioElements=[], particles=[];
@@ -158,25 +157,7 @@ sounds.forEach((s,i)=>{
     else { fadeOut(audio, 500); btn.classList.remove('active'); }
   });
 
-  // --- Mute кнопка ---
-  const muteBtn = document.createElement('button');
-  muteBtn.textContent = '🔇';
-  muteBtn.className = 'sound-button';
-  muteBtn.style.marginTop = '5px';
-  muteBtn.style.background = 'rgba(255,0,0,0.3)';
-  track.appendChild(muteBtn);
-
-  muteBtn.addEventListener('click', ()=>{
-      if(audio.muted){
-          audio.muted = false;
-          muteBtn.style.background = 'rgba(255,0,0,0.3)';
-      } else {
-          audio.muted = true;
-          muteBtn.style.background = 'rgba(255,0,0,0.6)';
-      }
-  });
-
-  audioElements.push({audio, btn, slider, muteBtn, color:s.color});
+  audioElements.push({audio, btn, slider, color:s.color});
 });
 
 window.addEventListener('load', ()=>{ if(window.innerWidth <= 768){ grid.scrollLeft = 0; } });
@@ -215,7 +196,7 @@ function animate(){
   }
 
   audioElements.forEach(a=>{
-    a.btn.style.backgroundColor = (!a.audio.paused && !a.audio.muted) ? a.color.replace('0.2','0.7') : 'rgba(255,255,255,0.3)';
+    a.btn.style.backgroundColor = (!a.audio.paused) ? a.color.replace('0.2','0.7') : 'rgba(255,255,255,0.3)';
   });
 
   requestAnimationFrame(animate);
