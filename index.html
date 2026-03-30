@@ -36,8 +36,45 @@
   .controls button, .controls select { padding:8px 14px; border:none; border-radius:12px; background: rgba(255,255,255,0.2); color:black; cursor:pointer; font-weight:bold; transition:0.2s; backdrop-filter: blur(5px); }
   .controls button:hover, .controls select:hover { background: rgba(255,255,255,0.4); }
 
-  .sound-grid { display:flex; flex-wrap: nowrap; overflow-x:auto; gap:20px; padding-bottom:20px; width:100%; justify-content:center; }
-  .sound-track { display:flex; flex-direction: column; align-items:center; flex-shrink:0; width:70px; }
+  .sound-grid {
+    display:flex;
+    flex-wrap: nowrap;
+    overflow-x:auto;
+    overflow-y:hidden;
+    gap:20px;
+    padding-bottom:20px;
+    width:100%;
+    justify-content:center;
+    -webkit-overflow-scrolling: touch;
+    box-sizing: border-box;
+    scroll-behavior: smooth;
+  }
+
+  @media (max-width: 768px) {
+    .sound-grid {
+      justify-content:flex-start;
+      padding-left:20px;
+      padding-right:20px;
+    }
+  }
+
+  .sound-grid::-webkit-scrollbar {
+    height: 8px;
+  }
+
+  .sound-grid::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.3);
+    border-radius: 10px;
+  }
+
+  .sound-track {
+    display:flex;
+    flex-direction: column;
+    align-items:center;
+    flex: 0 0 70px;
+    width:70px;
+  }
+
   .volume-slider { writing-mode: bt-lr; -webkit-appearance: slider-vertical; width:100%; height:150px; margin-bottom:10px; background: rgba(255,255,255,0.2); border-radius:8px; outline:none; cursor:pointer; }
   .volume-slider::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:#ffb400; box-shadow:0 0 5px #ffb400; cursor:pointer; }
   .volume-slider::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:#ffb400; cursor:pointer; box-shadow:0 0 5px #ffb400; }
@@ -76,15 +113,13 @@
       <option value="300">5 m</option>
     </select>
 
-    <!-- Таймер -->
     <select id="autoOffSelect">
-      <option value="0">Timer: Off</option>
       <option value="300">Timer: 5 min</option>
       <option value="1200">Timer: 20 min</option>
       <option value="3600">Timer: 1 hour</option>
       <option value="28800">Timer: 8 hours</option>
     </select>
-    <button id="timerBtn">Start Timer</button>
+    <button id="timerBtn">Start</button>
     <span class="timer-display" id="timerDisplay">00:00</span>
   </div>
 
@@ -106,100 +141,195 @@ const sounds = [
 let lang='en', audioElements=[], particles=[];
 const grid=document.getElementById('soundGrid');
 
-// ===== Создание треков =====
 sounds.forEach((s,i)=>{
-  const track=document.createElement('div'); track.className='sound-track';
+  const track=document.createElement('div');
+  track.className='sound-track';
   track.innerHTML=`<input type="range" min="0" max="1" step="0.01" value="0.5" class="volume-slider">
                    <button class="sound-button">${s.name[lang]}</button>`;
   grid.appendChild(track);
 
-  const audio=new Audio(s.file); audio.loop=true; audio.volume=0.5;
+  const audio=new Audio(s.file);
+  audio.loop=true;
+  audio.volume=0.5;
+
   const slider=track.querySelector('.volume-slider');
   const btn=track.querySelector('.sound-button');
 
   slider.addEventListener('input', e=>{ audio.volume=e.target.value; });
-  btn.addEventListener('click', e=>{
+  btn.addEventListener('click', ()=>{
     if(audio.paused){ audio.play(); btn.classList.add('active'); }
     else { audio.pause(); btn.classList.remove('active'); }
   });
+
   audioElements.push({audio, btn, slider, color:s.color});
 });
 
-// ===== Canvas визуализация =====
+window.addEventListener('load', ()=>{
+  if(window.innerWidth <= 768){
+    grid.scrollLeft = 0;
+  }
+});
+
 const canvas=document.getElementById('vis'), ctx=canvas.getContext('2d');
 canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+
 function animate(){
-  ctx.fillStyle='rgba(0,0,0,0.05)'; ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='rgba(0,0,0,0.05)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
   audioElements.forEach(a=>{
     if(!a.audio.paused && Math.random()<0.3){
-      particles.push({x:Math.random()*canvas.width, y:canvas.height+10,
-                      radius:a.audio.volume*15+Math.random()*10,
-                      speed:0.2+Math.random()*0.3, alpha:0.05+Math.random()*0.1,
-                      color:a.color});
+      particles.push({
+        x:Math.random()*canvas.width,
+        y:canvas.height+10,
+        radius:a.audio.volume*15+Math.random()*10,
+        speed:0.2+Math.random()*0.3,
+        alpha:0.05+Math.random()*0.1,
+        color:a.color
+      });
     }
   });
+
   for(let i=particles.length-1;i>=0;i--){
-    const p=particles[i]; p.y-=p.speed; p.alpha*=0.995;
-    ctx.beginPath(); ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
-    ctx.fillStyle=p.color.replace('0.2', p.alpha.toFixed(2)); ctx.fill();
+    const p=particles[i];
+    p.y-=p.speed;
+    p.alpha*=0.995;
+
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
+    ctx.fillStyle=p.color.replace('0.2', p.alpha.toFixed(2));
+    ctx.fill();
+
     if(p.alpha<0.01) particles.splice(i,1);
   }
+
   audioElements.forEach(a=>{
     a.btn.style.backgroundColor = !a.audio.paused ? a.color.replace('0.2','0.7') : 'rgba(255,255,255,0.3)';
   });
+
   requestAnimationFrame(animate);
 }
-animate();
-window.addEventListener('resize', ()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
 
-// ===== Language =====
+animate();
+window.addEventListener('resize', ()=>{
+  canvas.width=window.innerWidth;
+  canvas.height=window.innerHeight;
+});
+
 const langBtn=document.getElementById('langBtn');
 const langDropdown=document.getElementById('langDropdown');
-langBtn.addEventListener('click', ()=>{ langDropdown.style.display = langDropdown.style.display==='flex'?'none':'flex'; langDropdown.style.flexDirection='column'; });
+
+langBtn.addEventListener('click', ()=>{
+  langDropdown.style.display = langDropdown.style.display === 'flex' ? 'none' : 'flex';
+});
+
 function setLang(l){
   lang=l;
-  document.getElementById('title').innerText = lang==='en'?'BUCKET ASMR':(lang==='ru'?'ВЕДРО АСМР':'ВIДРО АСМР');
-  audioElements.forEach((a,i)=>{ a.btn.innerText = sounds[i].name[lang]; });
+
+  document.getElementById('title').innerText =
+    lang==='en' ? 'BUCKET ASMR' :
+    lang==='ru' ? 'ВЕДРО АСМР' : 'ВІДРО АСМР';
+
+  audioElements.forEach((a,i)=>{
+    a.btn.innerText = sounds[i].name[lang];
+  });
+
+  document.getElementById('randomBtn').innerText = randomActive
+    ? (lang==='ru' ? 'Рандом ON' : lang==='uk' ? 'Рандом ON' : 'Random ON')
+    : (lang==='ru' ? 'Рандом OFF' : lang==='uk' ? 'Рандом OFF' : 'Random OFF');
+
+  document.getElementById('timerBtn').innerText = timerRunning
+    ? (lang==='ru' ? 'Стоп таймер' : lang==='uk' ? 'Стоп таймер' : 'Stop Timer')
+    : (lang==='ru' ? 'Старт' : lang==='uk' ? 'Старт' : 'Start');
+
   langDropdown.style.display='none';
 }
 
-// ===== Randomizer =====
-let randomActive=false, randomTimer=null;
-const randomBtn=document.getElementById('randomBtn'), randomInterval=document.getElementById('randomInterval');
-randomBtn.addEventListener('click', ()=>{
-  randomActive=!randomActive; randomBtn.innerText=randomActive?'Random ON':'Random OFF';
-  if(randomActive){ triggerRandom(); scheduleRandom(); } else clearTimeout(randomTimer);
+window.addEventListener('click', (e)=>{
+  if(!e.target.closest('.lang-select')){
+    langDropdown.style.display='none';
+  }
 });
+
+let randomActive=false;
+let randomTimer=null;
+
+const randomBtn=document.getElementById('randomBtn');
+const randomInterval=document.getElementById('randomInterval');
+
+randomBtn.addEventListener('click', ()=>{
+  randomActive=!randomActive;
+
+  randomBtn.innerText = randomActive
+    ? (lang==='en' ? 'Random ON' : 'Рандом ON')
+    : (lang==='en' ? 'Random OFF' : 'Рандом OFF');
+
+  if(randomActive){
+    triggerRandom();
+    scheduleRandom();
+  } else {
+    clearTimeout(randomTimer);
+  }
+});
+
 function scheduleRandom(){
+  if(!randomActive) return;
+
   let intervalSec=parseInt(randomInterval.value);
-  if(intervalSec===0) intervalSec=Math.floor(Math.random()*10)+5;
-  randomTimer=setTimeout(()=>{ triggerRandom(); if(randomActive)scheduleRandom(); }, intervalSec*1000);
+
+  if(intervalSec===0){
+    intervalSec=Math.floor(Math.random()*10)+5;
+  }
+
+  randomTimer=setTimeout(()=>{
+    triggerRandom();
+    if(randomActive) scheduleRandom();
+  }, intervalSec*1000);
 }
+
 function triggerRandom(){
   const total=audioElements.length;
-  const activeCount=Math.floor(Math.random()*total+1);
-  const indices=Array.from({length:total},(_,i)=>i); shuffle(indices);
-  const selected=indices.slice(0,activeCount);
+  const activeCount=Math.floor(Math.random()*total)+1;
+  const indices=Array.from({length:total}, (_,i)=>i);
+
+  shuffle(indices);
+
+  const selected=indices.slice(0, activeCount);
+
   audioElements.forEach((a,i)=>{
-    if(selected.includes(i)){ if(a.audio.paused){ a.audio.play(); a.btn.classList.add('active'); } }
-    else { if(!a.audio.paused){ a.audio.pause(); a.btn.classList.remove('active'); } }
+    if(selected.includes(i)){
+      if(a.audio.paused){
+        a.audio.play();
+        a.btn.classList.add('active');
+      }
+    } else {
+      if(!a.audio.paused){
+        a.audio.pause();
+        a.btn.classList.remove('active');
+      }
+    }
   });
 }
-function shuffle(array){ for(let i=array.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [array[i],array[j]]=[array[j],array[i]]; } }
 
-// ===== Auto-off Timer =====
-let timerSeconds=0, timerInterval=null;
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+let timerSeconds=0;
+let timerInterval=null;
+let timerRunning=false;
+
 const autoOffSelect=document.getElementById('autoOffSelect');
 const timerBtn=document.getElementById('timerBtn');
 const timerDisplay=document.getElementById('timerDisplay');
-let timerRunning=false;
 
 timerBtn.addEventListener('click', ()=>{
   if(!timerRunning){
     timerSeconds=parseInt(autoOffSelect.value);
-    if(timerSeconds>0){
-      startTimer();
-    }
+    startTimer();
   } else {
     stopTimer();
   }
@@ -207,30 +337,56 @@ timerBtn.addEventListener('click', ()=>{
 
 function startTimer(){
   timerRunning=true;
-  timerBtn.innerText='Stop Timer';
+  timerBtn.innerText = lang==='en' ? 'Stop Timer' : 'Стоп таймер';
+
   updateTimerDisplay();
+
   clearInterval(timerInterval);
   timerInterval=setInterval(()=>{
     timerSeconds--;
     updateTimerDisplay();
-    if(timerSeconds<=0){ stopAllSounds(); stopTimer(); }
+
+    if(timerSeconds<=0){
+      stopAllSounds();
+      stopTimer();
+    }
   },1000);
 }
 
 function stopTimer(){
   timerRunning=false;
-  timerBtn.innerText='Start Timer';
-  clearInterval(timerInterval);
   timerSeconds=0;
+  clearInterval(timerInterval);
+
+  // отключаем рандомизацию
+  if(randomActive){
+    clearTimeout(randomTimer);
+    randomActive=false;
+    randomBtn.innerText = lang==='en' ? 'Random OFF' : 'Рандом OFF';
+  }
+
+  timerBtn.innerText = lang==='en' ? 'Start' : 'Старт';
   updateTimerDisplay();
 }
 
 function updateTimerDisplay(){
-  const m=Math.floor(timerSeconds/60), s=timerSeconds%60;
-  timerDisplay.innerText=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const hours=Math.floor(timerSeconds/3600);
+  const minutes=Math.floor((timerSeconds%3600)/60);
+  const seconds=timerSeconds%60;
+
+  if(hours>0){
+    timerDisplay.innerText=`${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+  } else {
+    timerDisplay.innerText=`${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`;
+  }
 }
 
-function stopAllSounds(){ audioElements.forEach(a=>{ a.audio.pause(); a.btn.classList.remove('active'); }); }
+function stopAllSounds(){
+  audioElements.forEach(a=>{
+    a.audio.pause();
+    a.btn.classList.remove('active');
+  });
+}
 </script>
 </body>
 </html>
