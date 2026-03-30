@@ -45,7 +45,7 @@
     min-width: 50px;
   }
 
-  /* КАСТОМНЫЕ СПИСКИ (ОТКРЫТИЕ ВНИЗ) */
+  /* Стили для кастомных списков (ОТКРЫТИЕ ВНИЗ) */
   .custom-select-container { position: relative; }
   .select-trigger {
     padding: 8px 14px; border-radius: 12px;
@@ -58,7 +58,7 @@
   .custom-dropdown {
     display: none; 
     position: absolute; 
-    top: 40px; 
+    top: 40px; /* Изменено с bottom на top для открытия вниз */
     left: 50%; 
     transform: translateX(-50%);
     background: rgba(30, 30, 45, 0.95); 
@@ -75,7 +75,7 @@
   .custom-dropdown button {
     padding: 10px 15px; border: none; background: transparent; color: white;
     cursor: pointer; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.1);
-    text-align: center; width: 100%;
+    text-align: center;
   }
   .custom-dropdown button:hover { background: rgba(255,255,255,0.15); }
   .custom-dropdown button:last-child { border-bottom: none; }
@@ -158,6 +158,7 @@
   <div class="controls">
     <button id="randomBtn">Play</button>
     
+    <!-- Скорость (Выпадает вниз) -->
     <div class="custom-select-container">
         <div class="select-trigger" id="speedTrigger">30s</div>
         <div class="custom-dropdown" id="speedDropdown">
@@ -168,6 +169,7 @@
         </div>
     </div>
 
+    <!-- Таймер сна (Выпадает вниз) -->
     <div class="custom-select-container">
         <div class="select-trigger" id="sleepTrigger">15m</div>
         <div class="custom-dropdown" id="sleepDropdown">
@@ -373,15 +375,13 @@ function animate(){
         
         let spawnChance = 0.05 + (currentTileVol / 255) * 0.4;
         if(Math.random() < spawnChance){
-          const types = ['circle', 'star', 'diamond', 'spark'];
-          const type = types[Math.floor(Math.random() * types.length)];
           particles.push({ 
-            type: type, x: Math.random()*innerWidth, y: innerHeight+10, 
-            r: ((currentTileVol / 60) + 3) * (type === 'spark' ? 0.5 : 2),
-            speedY: ((0.2 + Math.random()*0.8) + (currentTileVol / 100)) * (type === 'spark' ? 2.5 : 0.8),
-            speedX: (Math.random() - 0.5) * (type === 'diamond' ? 2 : 0.5),
-            al: 0.9, c: el.color, rot: Math.random() * Math.PI * 2,
-            rotSpeed: (Math.random() - 0.5) * 0.1, sine: Math.random() * 10
+            x: Math.random()*innerWidth, 
+            y: innerHeight+10, 
+            r: ((currentTileVol / 50) + 5) * 2,
+            s: ((0.1 + Math.random()*0.5) / 2 + (currentTileVol / 100)) / 3, 
+            al: 0.9, 
+            c: el.color 
           });
         }
     } else {
@@ -390,21 +390,12 @@ function animate(){
   });
 
   for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i]; p.y -= p.speedY; p.al -= 0.0015; p.rot += p.rotSpeed;
-    if(p.type === 'diamond') p.x += Math.sin(p.y * 0.05 + p.sine) * 1.2; else p.x += p.speedX;
-
-    visCtx.save();
-    visCtx.translate(p.x, p.y);
-    visCtx.rotate(p.rot);
+    const p = particles[i]; p.y -= p.s; p.al -= 0.0005;
+    visCtx.beginPath(); visCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
     let baseColor = p.c.split(',').slice(0, 3).join(',');
     visCtx.fillStyle = `${baseColor},${p.al.toFixed(2)})`;
-    visCtx.beginPath();
-    if(p.type === 'circle') visCtx.arc(0, 0, p.r, 0, Math.PI*2);
-    else if(p.type === 'star') { for(let j=0;j<5;j++) visCtx.lineTo(Math.cos((j*2.4)*Math.PI/1.2)*p.r, Math.sin((j*2.4)*Math.PI/1.2)*p.r); }
-    else if(p.type === 'diamond') { visCtx.moveTo(0,-p.r*1.5); visCtx.lineTo(p.r,0); visCtx.lineTo(0,p.r*1.5); visCtx.lineTo(-p.r,0); }
-    else if(p.type === 'spark') visCtx.rect(-1, -p.r*2, 2, p.r*4);
-    visCtx.closePath(); visCtx.fill(); visCtx.restore();
-    if(p.al <= 0 || p.y < -100) particles.splice(i, 1);
+    visCtx.fill();
+    if(p.al <= 0 || p.y < -50) particles.splice(i, 1);
   }
   requestAnimationFrame(animate);
 }
@@ -438,6 +429,7 @@ document.getElementById('helpBtn').onclick = (e) => { e.stopPropagation(); docum
 document.getElementById('closeHelp').onclick = () => { document.getElementById('helpModal').style.display='none'; };
 document.getElementById('langBtn').onclick = cycleLang;
 
+// Закрытие при клике мимо
 window.onclick = (e) => {
     if (!e.target.matches('.select-trigger')) {
         document.getElementById('speedDropdown').classList.remove('open');
