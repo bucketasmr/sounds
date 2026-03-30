@@ -209,27 +209,19 @@ function setLang(l) {
     updateRandomBtnText();
 }
 
-// ЛОГИКА ТАЙМЕРА
+// Таймер
 document.getElementById('timerBtn').addEventListener('click', function() {
-    if (timerInterval) {
-        stopTimer();
-    } else {
-        startTimer();
-    }
+    if (timerInterval) stopTimer(); else startTimer();
 });
 
 function startTimer() {
     timeLeft = parseInt(document.getElementById('autoOffSelect').value);
     document.getElementById('timerBtn').innerText = uiTL[lang].stop;
-    
     updateTimerDisplay();
     timerInterval = setInterval(() => {
         timeLeft--;
         updateTimerDisplay();
-        if (timeLeft <= 0) {
-            stopTimer();
-            allOff(); // Выключаем все звуки
-        }
+        if (timeLeft <= 0) { stopTimer(); allOff(); }
     }, 1000);
 }
 
@@ -258,45 +250,63 @@ function allOff() {
     });
 }
 
-// Random
+// Random Logic с плавными переходами
 document.getElementById('randomBtn').addEventListener('click', function() {
   randomActive = !randomActive;
   updateRandomBtnText();
   if(randomActive) runRandom(); 
-  else {
-      clearTimeout(randomTimeout);
-      audioElements.forEach(el => {
-          el.audio.pause(); el.audio.muted = true;
-          el.btn.classList.remove('active');
-          el.muteBtn.style.background = 'rgba(255,0,0,0.7)';
-      });
-  }
+  else allOff();
 });
 
 function runRandom() {
   if(!randomActive) return;
-  audioElements.forEach(el => { el.audio.pause(); el.audio.muted = true; el.btn.classList.remove('active'); el.muteBtn.style.background='rgba(255,0,0,0.7)'; });
+
+  // Генерируем новый набор случайных звуков
   let count = Math.floor(Math.random()*2)+1;
   let shuffled = [...audioElements].sort(() => 0.5-Math.random());
-  for(let i=0; i<count; i++) {
-    shuffled[i].audio.muted = false; shuffled[i].audio.volume = 0.5;
-    shuffled[i].updateStepsUI(0.5); shuffled[i].audio.play();
-    shuffled[i].btn.classList.add('active'); shuffled[i].muteBtn.style.background='rgba(255,0,0,0.3)';
-  }
+  let nextActive = shuffled.slice(0, count);
+
+  // Обрабатываем все элементы
+  audioElements.forEach(el => {
+    if (nextActive.includes(el)) {
+      // Плавное включение выбранных
+      if (el.audio.paused || el.audio.muted) {
+        el.audio.muted = false;
+        fadeIn(el.audio);
+        el.btn.classList.add('active');
+        el.muteBtn.style.background = 'rgba(255,0,0,0.3)';
+        el.updateStepsUI(0.5);
+      }
+    } else {
+      // Плавное затухание невыбранных
+      if (!el.audio.paused && !el.audio.muted) {
+        fadeOut(el.audio);
+        el.btn.classList.remove('active');
+        el.muteBtn.style.background = 'rgba(255,0,0,0.7)';
+      }
+    }
+  });
+
   randomTimeout = setTimeout(runRandom, parseInt(document.getElementById('randomInterval').value)*1000);
 }
 
+// Визуализация
 const visCanvas = document.getElementById('vis');
 const visCtx = visCanvas.getContext('2d');
 visCanvas.width = window.innerWidth; visCanvas.height = window.innerHeight;
 function animate(){
   visCtx.clearRect(0,0,visCanvas.width,visCanvas.height);
   audioElements.forEach(a => {
-    if(!a.audio.paused && !a.audio.muted && Math.random() < 0.25){
+    if(!a.audio.paused && !a.audio.muted && a.audio.volume > 0.05 && Math.random() < 0.25){
       particles.push({ x: Math.random()*visCanvas.width, y: visCanvas.height+10, r: a.audio.volume*20+8, s: 0.1+Math.random()*0.15, al: 0.6+Math.random()*0.3, c: a.color });
     }
-    if(!a.audio.paused && !a.audio.muted) a.btn.style.backgroundColor = a.color.replace('0.5', '0.8');
-    else a.btn.style.backgroundColor = 'rgba(255,255,255,0.3)';
+    // Цвет кнопок меняется в зависимости от громкости
+    if(!a.audio.paused && !a.audio.muted) {
+      let opacity = Math.max(0.3, a.audio.volume * 1.6);
+      a.btn.style.backgroundColor = a.color.replace('0.5', opacity.toFixed(2));
+    } else {
+      a.btn.style.backgroundColor = 'rgba(255,255,255,0.3)';
+    }
   });
   for(let i = particles.length - 1; i >= 0; i--){
     const p = particles[i]; p.y -= p.s; p.al *= 0.997;
@@ -310,15 +320,16 @@ function animate(){
 }
 animate();
 
+// Универсальные функции Fade
 function fadeIn(a) { 
     const el = audioElements.find(e => e.audio === a); clearInterval(el.fadeInterval);
-    a.muted = false; a.play(); let v = 0; a.volume = 0;
-    el.fadeInterval = setInterval(() => { v += 0.05; if(v >= 0.5) { a.volume=0.5; clearInterval(el.fadeInterval); } else a.volume=v; }, 40);
+    a.muted = false; a.play(); let v = a.volume;
+    el.fadeInterval = setInterval(() => { v += 0.01; if(v >= 0.5) { a.volume=0.5; clearInterval(el.fadeInterval); } else a.volume=v; }, 30);
 }
 function fadeOut(a) { 
     const el = audioElements.find(e => e.audio === a); clearInterval(el.fadeInterval);
     let v = a.volume;
-    el.fadeInterval = setInterval(() => { v -= 0.05; if(v <= 0) { a.volume=0; a.pause(); clearInterval(el.fadeInterval); } else a.volume=v; }, 40);
+    el.fadeInterval = setInterval(() => { v -= 0.01; if(v <= 0) { a.volume=0; a.pause(); clearInterval(el.fadeInterval); } else a.volume=v; }, 30);
 }
 
 document.getElementById('langBtn').addEventListener('click', (e) => {
