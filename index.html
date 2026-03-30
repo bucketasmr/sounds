@@ -11,29 +11,23 @@
     font-family: Arial, sans-serif; color: white; overflow: hidden;
   }
 
-  body::after {
-    content: "";
-    position: fixed; top:0; left:0; width:100%; height:100%;
-    background: transparent url('https://raw.githubusercontent.com/andreygolikov/star-background/main/stars.png') repeat top center;
-    z-index:0; pointer-events:none;
-  }
+  .overlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index:3; pointer-events: none; }
 
-  .overlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index:1; }
-
-  .container { position: relative; z-index: 2; display:flex; flex-direction: column; align-items:center; padding:20px; }
+  .container { position: relative; z-index: 10; display:flex; flex-direction: column; align-items:center; padding:20px; }
 
   .title-bar { display:flex; align-items:center; gap:10px; margin-bottom:20px; }
   h1 { margin:0; font-size:28px; color:#ffb400; text-shadow:0 0 10px #ffb400; }
 
   .lang-select { position: relative; }
-  .lang-select button { padding:5px 10px; border-radius:12px; border:none; background: rgba(255,255,255,0.2); color:white; cursor:pointer; font-weight:bold; backdrop-filter: blur(5px); transition:0.2s; }
+  .lang-select button { padding:5px 10px; border-radius:12px; border:none; background: rgba(255,255,255,0.2); color:white; cursor:pointer; font-weight:bold; backdrop-filter: blur(5px); transition: 0.2s; }
   .lang-select button:hover { background: rgba(255,255,255,0.4); }
   .lang-dropdown { display:none; position:absolute; top:35px; left:0; background: rgba(0,0,0,0.85); border-radius:12px; overflow:hidden; flex-direction:column; z-index:9999; }
   .lang-dropdown button { padding:8px 14px; border:none; background:transparent; color:white; cursor:pointer; font-weight:bold; text-align:left; transition:0.2s; }
   .lang-dropdown button:hover { background: rgba(255,255,255,0.2); }
 
-  .controls { margin-bottom:20px; display:flex; gap:10px; flex-wrap: wrap; align-items:center; }
-  .controls button, .controls select { padding:8px 14px; border:none; border-radius:12px; background: rgba(255,255,255,0.2); color:black; cursor:pointer; font-weight:bold; transition:0.2s; backdrop-filter: blur(5px); }
+  .controls { margin-bottom:20px; display:flex; gap:10px; flex-wrap: wrap; align-items:center; justify-content: center; }
+  .controls button, .controls select { padding:8px 14px; border:none; border-radius:12px; background: rgba(255,255,255,0.2); color:white; cursor:pointer; font-weight:bold; transition:0.2s; backdrop-filter: blur(5px); }
+  .controls select { color: black; } 
   .controls button:hover, .controls select:hover { background: rgba(255,255,255,0.4); }
 
   .sound-grid {
@@ -51,46 +45,34 @@
   }
 
   @media (max-width: 768px) {
-    .sound-grid {
-      justify-content:flex-start;
-      padding-left:20px;
-      padding-right:20px;
-    }
+    .sound-grid { justify-content:flex-start; padding-left:20px; padding-right:20px; }
   }
 
-  .sound-grid::-webkit-scrollbar {
-    height: 8px;
-  }
+  .sound-grid::-webkit-scrollbar { height: 8px; }
+  .sound-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); border-radius: 10px; }
 
-  .sound-grid::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.3);
-    border-radius: 10px;
-  }
-
-  .sound-track {
-    display:flex;
-    flex-direction: column;
-    align-items:center;
-    flex: 0 0 70px;
-    width:70px;
-  }
+  .sound-track { display:flex; flex-direction: column; align-items:center; flex: 0 0 70px; width:70px; }
 
   .volume-slider { writing-mode: bt-lr; -webkit-appearance: slider-vertical; width:100%; height:150px; margin-bottom:10px; background: rgba(255,255,255,0.2); border-radius:8px; outline:none; cursor:pointer; }
   .volume-slider::-webkit-slider-thumb { -webkit-appearance:none; width:20px; height:20px; border-radius:50%; background:#ffb400; box-shadow:0 0 5px #ffb400; cursor:pointer; }
-  .volume-slider::-moz-range-thumb { width:20px; height:20px; border-radius:50%; background:#ffb400; cursor:pointer; box-shadow:0 0 5px #ffb400; }
 
   .sound-button { width:70px; height:40px; border:none; border-radius:12px; background: rgba(255,255,255,0.3); color:white; font-weight:bold; cursor:pointer; text-align:center; display:flex; justify-content:center; align-items:center; backdrop-filter: blur(6px); transition:0.2s; }
-  .sound-button.active { box-shadow: 0 0 10px #fff; }
+  .sound-button.active { box-shadow: 0 0 15px rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.4); }
 
-  .timer-display { color: #9b59b6; font-weight:bold; font-size:16px; margin-left:10px; }
+  .timer-display { color: #9b59b6; font-weight:bold; font-size:16px; margin-left:10px; text-shadow: 0 0 5px rgba(155, 89, 182, 0.5); }
 
-  canvas { position: fixed; top:0; left:0; z-index: 0; }
+  canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; }
+  #stars { z-index:1; }
+  #vis { z-index:2; }
 </style>
 </head>
 <body>
-<div class="overlay"></div>
-<div class="container">
 
+<canvas id="stars"></canvas>
+<canvas id="vis"></canvas>
+<div class="overlay"></div>
+
+<div class="container">
   <div class="title-bar">
     <h1 id="title">BUCKET ASMR</h1>
     <div class="lang-select">
@@ -110,13 +92,13 @@
       <option value="60">1 m</option>
       <option value="120">2 m</option>
       <option value="300">5 m</option>
-      <option value="0">Fast</option>
+      <option value="5">Fast</option>
     </select>
 
     <select id="autoOffSelect">
-      <option value="120">Timer: 2 min</option>
-      <option value="300">Timer: 10 min</option>
-      <option value="1200">Timer: 30 min</option>
+      <option value="300">Timer: 5 min</option>
+      <option value="600">Timer: 10 min</option>
+      <option value="1800">Timer: 30 min</option>
       <option value="3600">Timer: 1 hour</option>
       <option value="28800">Timer: 8 hours</option>
     </select>
@@ -127,260 +109,202 @@
   <div class="sound-grid" id="soundGrid"></div>
 </div>
 
-<canvas id="vis"></canvas>
-
 <script>
 const sounds = [
-  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/purplebrush.wav', name:{en:'Brush', ru:'Кисть', uk:'Пензель'}, color:'rgba(150,100,255,0.2)'},
-  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/choko.wav', name:{en:'Choko', ru:'Шоколад', uk:'Шоколад'}, color:'rgba(139,69,19,0.2)'},
-  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/strawberry.wav', name:{en:'Strawberry', ru:'Клубника', uk:'Полуниця'}, color:'rgba(255,105,180,0.2)'},
-  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/wax.wav', name:{en:'Wax', ru:'Воск', uk:'Віск'}, color:'rgba(255,165,0,0.2)'},
-  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/woodandrocks.wav', name:{en:'Wood & Rocks', ru:'Дерево и камни', uk:'Дерево і камені'}, color:'rgba(255,255,0,0.2)'}
+  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/purplebrush.wav', name:{en:'Brush', ru:'Кисть', uk:'Пензель'}, color:'rgba(150,100,255,0.4)'},
+  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/choko.wav', name:{en:'Choko', ru:'Шоколад', uk:'Шоколад'}, color:'rgba(139,69,19,0.4)'},
+  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/strawberry.wav', name:{en:'Strawberry', ru:'Клубника', uk:'Полуниця'}, color:'rgba(255,105,180,0.4)'},
+  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/wax.wav', name:{en:'Wax', ru:'Воск', uk:'Віск'}, color:'rgba(255,165,0,0.4)'},
+  {file:'https://raw.githubusercontent.com/bukcetasmr/sounds/main/woodandrocks.wav', name:{en:'Wood & Rocks', ru:'Дерево и камни', uk:'Дерево і камені'}, color:'rgba(255,255,0,0.4)'}
 ];
 
 let lang='en', audioElements=[], particles=[];
-const grid=document.getElementById('soundGrid');
 
-sounds.forEach((s,i)=>{
-  const track=document.createElement('div');
-  track.className='sound-track';
-  track.innerHTML=`<input type="range" min="0" max="1" step="0.01" value="0.5" class="volume-slider">
-                   <button class="sound-button">${s.name[lang]}</button>`;
+// ----------------- Звёзды -----------------
+const starCanvas = document.getElementById('stars');
+const starCtx = starCanvas.getContext('2d');
+function resizeStars() { starCanvas.width = window.innerWidth; starCanvas.height = window.innerHeight; }
+resizeStars();
+const starsArr = [];
+for(let i=0; i<250; i++){ starsArr.push({ x: Math.random() * starCanvas.width, y: Math.random() * starCanvas.height, r: Math.random() * 1.5 + 0.5, a: Math.random(), twinkle: Math.random() * 0.02 + 0.005 }); }
+function drawStars(){
+  starCtx.clearRect(0, 0, starCanvas.width, starCanvas.height);
+  for(let s of starsArr){ s.a += s.twinkle; if(s.a > 1 || s.a < 0.2) s.twinkle *= -1; starCtx.beginPath(); starCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2); starCtx.fillStyle = `rgba(255, 255, 255, ${Math.abs(s.a)})`; starCtx.fill(); }
+  requestAnimationFrame(drawStars);
+}
+drawStars();
+
+// ----------------- Звуки -----------------
+const grid = document.getElementById('soundGrid');
+sounds.forEach((s, i) => {
+  const track = document.createElement('div');
+  track.className = 'sound-track';
+  track.innerHTML = `
+    <input type="range" min="0" max="1" step="0.01" value="0.5" class="volume-slider">
+    <button class="sound-button">${s.name[lang]}</button>
+    <button class="mute-btn" style="margin-top:5px; border:none; border-radius:10px; background:rgba(255,0,0,0.3); color:white; cursor:pointer; width:35px; height:25px; font-size:12px;">🔇</button>
+  `;
   grid.appendChild(track);
 
-  const audio=new Audio(s.file);
-  audio.loop=true;
-  audio.volume=0.5;
+  const audio = new Audio(s.file);
+  audio.loop = true;
+  audio.volume = 0.5;
 
-  const slider=track.querySelector('.volume-slider');
-  const btn=track.querySelector('.sound-button');
+  const slider = track.querySelector('.volume-slider');
+  const btn = track.querySelector('.sound-button');
+  const muteBtn = track.querySelector('.mute-btn');
 
-  slider.addEventListener('input', e=>{ audio.volume=e.target.value; });
-  btn.addEventListener('click', ()=>{
-    if(audio.paused){ fadeIn(audio, 500); btn.classList.add('active'); }
-    else { fadeOut(audio, 500); btn.classList.remove('active'); }
+  slider.addEventListener('input', e => { audio.volume = e.target.value; });
+  btn.addEventListener('click', () => {
+    if(audio.paused){ fadeIn(audio); btn.classList.add('active'); }
+    else { fadeOut(audio); btn.classList.remove('active'); }
   });
-
-  // --- добавляем кнопку отключения звука ---
-  const muteBtn = document.createElement('button');
-  muteBtn.textContent = '🔇';
-  muteBtn.className = 'sound-button';
-  muteBtn.style.marginTop = '5px';
-  muteBtn.style.background = 'rgba(255,0,0,0.3)';
-  track.appendChild(muteBtn);
-
-  muteBtn.addEventListener('click', ()=>{
-      if(audio.muted){
-          audio.muted = false;
-          fadeIn(audio, 500);
-          muteBtn.style.background = 'rgba(255,0,0,0.3)';
-          btn.classList.add('active');
-      } else {
-          fadeOut(audio, 500);
-          audio.muted = true;
-          muteBtn.style.background = 'rgba(255,0,0,0.6)';
-          btn.classList.remove('active');
-      }
+  muteBtn.addEventListener('click', () => {
+    audio.muted = !audio.muted;
+    muteBtn.style.background = audio.muted ? 'rgba(255,0,0,0.7)' : 'rgba(255,0,0,0.3)';
   });
-
-  audioElements.push({audio, btn, slider, muteBtn, color:s.color});
+  audioElements.push({audio, btn, muteBtn, color: s.color, fadeInterval: null});
 });
 
-window.addEventListener('load', ()=>{ if(window.innerWidth <= 768){ grid.scrollLeft = 0; } });
+// ----------------- Визуализация (Частицы) -----------------
+const visCanvas = document.getElementById('vis');
+const visCtx = visCanvas.getContext('2d');
+visCanvas.width = window.innerWidth; visCanvas.height = window.innerHeight;
 
-const canvas=document.getElementById('vis'), ctx=canvas.getContext('2d');
-canvas.width=window.innerWidth; canvas.height=window.innerHeight;
-
-function animate(){
-  ctx.fillStyle='rgba(0,0,0,0.05)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  audioElements.forEach(a=>{
-    if(!a.audio.paused && Math.random()<0.3){
-      particles.push({
-        x:Math.random()*canvas.width,
-        y:canvas.height+10,
-        radius:a.audio.volume*15+Math.random()*10,
-        speed:0.2+Math.random()*0.3,
-        alpha:0.05+Math.random()*0.1,
-        color:a.color
-      });
+function animateVis(){
+  visCtx.clearRect(0, 0, visCanvas.width, visCanvas.height);
+  audioElements.forEach(a => {
+    if(!a.audio.paused && !a.audio.muted && Math.random() < 0.25){
+      particles.push({ x: Math.random() * visCanvas.width, y: visCanvas.height + 20, radius: a.audio.volume * 18 + Math.random() * 10, speed: (0.1 + Math.random() * 0.2), alpha: 0.3 + Math.random() * 0.4, color: a.color });
     }
   });
-
-  for(let i=particles.length-1;i>=0;i--){
-    const p=particles[i];
-    p.y-=p.speed;
-    p.alpha*=0.995;
-
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
-    ctx.fillStyle=p.color.replace('0.2', p.alpha.toFixed(2));
-    ctx.fill();
-
-    if(p.alpha<0.01) particles.splice(i,1);
+  for(let i = particles.length - 1; i >= 0; i--){
+    const p = particles[i]; p.y -= p.speed; p.alpha *= 0.997;
+    let baseColor = p.color.substring(0, p.color.lastIndexOf(',') + 1);
+    visCtx.beginPath(); visCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); visCtx.fillStyle = `${baseColor} ${p.alpha.toFixed(2)})`; visCtx.fill();
+    if(p.alpha < 0.01) particles.splice(i, 1);
   }
-
-  audioElements.forEach(a=>{
-    a.btn.style.backgroundColor = (!a.audio.paused && !a.audio.muted) ? a.color.replace('0.2','0.7') : 'rgba(255,255,255,0.3)';
+  audioElements.forEach(a => {
+    if(!a.audio.paused && !a.audio.muted) a.btn.style.backgroundColor = a.color.replace('0.4', '0.7');
+    else a.btn.style.backgroundColor = 'rgba(255,255,255,0.3)';
   });
-
-  requestAnimationFrame(animate);
+  requestAnimationFrame(animateVis);
 }
+animateVis();
 
-animate();
-window.addEventListener('resize', ()=>{ canvas.width=window.innerWidth; canvas.height=window.innerHeight; });
-
-const langBtn=document.getElementById('langBtn');
-const langDropdown=document.getElementById('langDropdown');
-
-langBtn.addEventListener('click', ()=>{ langDropdown.style.display = langDropdown.style.display === 'flex' ? 'none' : 'flex'; });
-
-function setLang(l){
-  lang=l;
-  document.getElementById('title').innerText =
-    lang==='en' ? 'BUCKET ASMR' :
-    lang==='ru' ? 'ВЕДРО АСМР' : 'ВІДРО АСМР';
-
-  audioElements.forEach((a,i)=>{ a.btn.innerText = sounds[i].name[lang]; });
-
-  document.getElementById('randomBtn').innerText = randomActive
-    ? (lang==='ru' ? 'Рандом ON' : lang==='uk' ? 'Рандом ON' : 'Random ON')
-    : (lang==='ru' ? 'Рандом OFF' : lang==='uk' ? 'Рандом OFF' : 'Random OFF');
-
-  document.getElementById('timerBtn').innerText = timerRunning
-    ? (lang==='ru' ? 'Стоп таймер' : lang==='uk' ? 'Стоп таймер' : 'Stop Timer')
-    : (lang==='ru' ? 'Старт' : lang==='uk' ? 'Старт' : 'Start');
-
-  langDropdown.style.display='none';
-}
-
-window.addEventListener('click', (e)=>{ if(!e.target.closest('.lang-select')){ langDropdown.style.display='none'; } });
-
-let randomActive=false;
-let randomTimer=null;
-
-const randomBtn=document.getElementById('randomBtn');
-const randomInterval=document.getElementById('randomInterval');
-
-randomBtn.addEventListener('click', ()=>{
-  randomActive=!randomActive;
-
-  randomBtn.innerText = randomActive
-    ? (lang==='en' ? 'Random ON' : 'Рандом ON')
-    : (lang==='en' ? 'Random OFF' : 'Рандом OFF');
-
-  if(randomActive){
-    triggerRandom();
-    scheduleRandom();
-  } else { clearTimeout(randomTimer); }
-});
-
-function scheduleRandom(){
-  let intervalSec=parseInt(randomInterval.value);
-  if(intervalSec===0) intervalSec=Math.floor(Math.random()*10)+5;
-
-  randomTimer=setTimeout(()=>{
-    triggerRandom();
-    if(randomActive) scheduleRandom();
-  }, intervalSec*1000);
-}
-
-// --- Обновлённый triggerRandom с плавным запуском ---
-function triggerRandom() {
-  const calmIndices = [0, 1, 2, 3]; // Brush, Choko, Strawberry, Wax
-  const total = audioElements.length;
-
-  const calmCount = Math.floor(Math.random() * 2) + 1;
-  const shuffledCalm = [...calmIndices];
-  shuffle(shuffledCalm);
-  const activeCalm = shuffledCalm.slice(0, calmCount);
-
-  audioElements.forEach((a, i) => {
-    if (!activeCalm.includes(i)) fadeOut(a.audio, 500);
-    a.btn.classList.remove('active');
-  });
-
-  activeCalm.forEach((i, idx) => {
-    setTimeout(() => fadeIn(audioElements[i].audio, 500), idx * 200);
-    audioElements[i].btn.classList.add('active');
-  });
-
-  const extraCount = Math.floor(Math.random() * (total - calmCount));
-  const indices = Array.from({ length: total }, (_, i) => i).filter(i => !activeCalm.includes(i));
-  shuffle(indices);
-  const extraSelected = indices.slice(0, extraCount);
-
-  extraSelected.forEach((i, idx) => {
-    setTimeout(() => {
-      fadeIn(audioElements[i].audio, 500);
-      audioElements[i].btn.classList.add('active');
-    }, 600 + idx * 200);
-  });
-}
-
-function fadeIn(audio, duration = 500) {
+// ----------------- Fade Функции -----------------
+function fadeIn(audio) {
+  const el = audioElements.find(e => e.audio === audio);
+  if(el) { clearInterval(el.fadeInterval); }
   audio.volume = 0;
-  if (audio.paused) audio.play();
-  const step = 50;
-  const increment = step / duration;
+  audio.muted = false; // На всякий случай снимаем мьют при обычном клике
+  audio.play();
   const interval = setInterval(() => {
-    audio.volume = Math.min(audio.volume + increment, 0.5);
-    if (audio.volume >= 0.5) clearInterval(interval);
-  }, step);
+    if (audio.volume < 0.45) audio.volume += 0.05;
+    else { audio.volume = 0.5; clearInterval(interval); }
+  }, 50);
+  if(el) {
+      el.fadeInterval = interval;
+      el.muteBtn.style.background = 'rgba(255,0,0,0.3)';
+  }
 }
 
-function fadeOut(audio, duration = 500) {
-  const step = 50;
-  const decrement = step / duration * 0.5;
+function fadeOut(audio) {
+  const el = audioElements.find(e => e.audio === audio);
+  if(el) { clearInterval(el.fadeInterval); }
   const interval = setInterval(() => {
-    audio.volume = Math.max(audio.volume - decrement, 0);
-    if (audio.volume <= 0) { clearInterval(interval); audio.pause(); }
-  }, step);
+    if (audio.volume > 0.05) audio.volume -= 0.05;
+    else { audio.volume = 0; audio.pause(); clearInterval(interval); }
+  }, 50);
+  if(el) el.fadeInterval = interval;
 }
 
-function shuffle(array){ for(let i=array.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [array[i], array[j]] = [array[j], array[i]]; } }
+// ----------------- Логика кнопок -----------------
+function setLang(l) {
+  lang = l;
+  document.getElementById('title').innerText = lang === 'en' ? 'BUCKET ASMR' : lang === 'ru' ? 'ВЕДРО АСМР' : 'ВІДРО АСМР';
+  audioElements.forEach((a, i) => a.btn.innerText = sounds[i].name[lang]);
+  updateRandomBtnText();
+}
 
-// --- Таймер ---
-let timerSeconds=0, timerInterval=null, timerRunning=false;
-const autoOffSelect=document.getElementById('autoOffSelect');
-const timerBtn=document.getElementById('timerBtn');
-const timerDisplay=document.getElementById('timerDisplay');
+function updateRandomBtnText() {
+    const btn = document.getElementById('randomBtn');
+    const isOff = randomActive === false;
+    if(lang === 'en') btn.innerText = isOff ? 'Random OFF' : 'Random ON';
+    else if(lang === 'ru') btn.innerText = isOff ? 'Рандом ВЫКЛ' : 'Рандом ВКЛ';
+    else btn.innerText = isOff ? 'Рандом ВИМК' : 'Рандом УВМК';
+}
 
-timerBtn.addEventListener('click', ()=>{
-  if(!timerRunning){ timerSeconds=parseInt(autoOffSelect.value); startTimer(); } 
-  else { stopTimer(); }
+// Таймер
+let timerSeconds = 0, timerInterval = null;
+document.getElementById('timerBtn').addEventListener('click', function() {
+  if (timerInterval) {
+    clearInterval(timerInterval); timerInterval = null;
+    this.innerText = lang === 'en' ? 'Start' : 'Старт';
+  } else {
+    timerSeconds = parseInt(document.getElementById('autoOffSelect').value);
+    this.innerText = lang === 'en' ? 'Stop' : 'Стоп';
+    timerInterval = setInterval(() => {
+      timerSeconds--;
+      let m = Math.floor(timerSeconds/60), s = timerSeconds%60;
+      document.getElementById('timerDisplay').innerText = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      if (timerSeconds <= 0) {
+        audioElements.forEach(a => { fadeOut(a.audio); a.btn.classList.remove('active'); });
+        clearInterval(timerInterval); timerInterval = null;
+      }
+    }, 1000);
+  }
 });
 
-function startTimer(){
-  timerRunning=true;
-  timerBtn.innerText = lang==='en' ? 'Stop Timer' : 'Стоп таймер';
-  updateTimerDisplay();
-  clearInterval(timerInterval);
-  timerInterval=setInterval(()=>{
-    timerSeconds--;
-    updateTimerDisplay();
-    if(timerSeconds<=0){
-      audioElements.forEach(a=>fadeOut(a.audio, 1000));
-      stopTimer();
+// RANDOM LOGIC (UPDATED WITH MUTE)
+let randomActive = false, randomTimeout = null;
+document.getElementById('randomBtn').addEventListener('click', function() {
+    randomActive = !randomActive;
+    updateRandomBtnText();
+    if(randomActive) {
+        runRandomLogic();
+    } else {
+        clearTimeout(randomTimeout);
+        // Снимаем мьют со всех при выключении режима рандома
+        audioElements.forEach(el => {
+            el.audio.muted = false;
+            el.muteBtn.style.background = 'rgba(255,0,0,0.3)';
+        });
     }
-  },1000);
+});
+
+function runRandomLogic() {
+    if(!randomActive) return;
+
+    // 1. Сначала ставим в Mute и выключаем ВСЕ звуки
+    audioElements.forEach(el => {
+        clearInterval(el.fadeInterval);
+        el.audio.pause();
+        el.audio.volume = 0;
+        el.audio.muted = true; // Статус Mute для неиспользуемых
+        el.btn.classList.remove('active');
+        el.muteBtn.style.background = 'rgba(255,0,0,0.7)';
+    });
+
+    // 2. Выбираем новые случайные звуки
+    let count = Math.floor(Math.random() * 3) + 1;
+    let shuffled = [...audioElements].sort(() => 0.5 - Math.random());
+    
+    for(let i=0; i<count; i++) {
+        shuffled[i].audio.muted = false; // Включаем звук только для активных
+        shuffled[i].muteBtn.style.background = 'rgba(255,0,0,0.3)';
+        fadeIn(shuffled[i].audio);
+        shuffled[i].btn.classList.add('active');
+    }
+
+    // 3. Планируем следующий цикл
+    let nextTime = parseInt(document.getElementById('randomInterval').value) * 1000;
+    randomTimeout = setTimeout(runRandomLogic, nextTime);
 }
 
-function stopTimer(){
-  timerRunning=false; timerSeconds=0;
-  clearInterval(timerInterval);
-  timerBtn.innerText = lang==='en' ? 'Start' : 'Старт';
-  updateTimerDisplay();
-}
-
-function updateTimerDisplay(){
-  const hours=Math.floor(timerSeconds/3600);
-  const minutes=Math.floor((timerSeconds%3600)/60);
-  const seconds=timerSeconds%60;
-  timerDisplay.innerText=(hours>0?String(hours).padStart(2,'0')+':':'')+
-                         String(minutes).padStart(2,'0')+':' + String(seconds).padStart(2,'0');
-}
+window.addEventListener('resize', () => { resizeStars(); visCanvas.width = window.innerWidth; visCanvas.height = window.innerHeight; });
+document.getElementById('langBtn').addEventListener('click', (e) => { e.stopPropagation(); const d = document.getElementById('langDropdown'); d.style.display = d.style.display === 'flex' ? 'none' : 'flex'; });
+window.addEventListener('click', () => document.getElementById('langDropdown').style.display = 'none');
 </script>
 </body>
 </html>
