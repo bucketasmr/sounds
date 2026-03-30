@@ -82,13 +82,18 @@
 
   canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; }
   
-  #helpModal {
+  .modal {
     display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.85); z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(8px);
   }
-  .help-content {
+  .modal-content {
     background: rgba(20, 20, 35, 0.95); border: 1px solid #ffb400;
     padding: 30px; border-radius: 24px; text-align: center; color: white; max-width: 85%;
+    box-shadow: 0 0 30px rgba(255, 180, 0, 0.2);
+  }
+  .modal-btn {
+    background:#ffb400; border:none; padding:12px 30px; border-radius:12px; 
+    font-weight:bold; cursor:pointer; color:black; font-size: 16px; margin-top: 10px;
   }
 </style>
 </head>
@@ -98,11 +103,25 @@
 <canvas id="vis"></canvas>
 <div class="overlay"></div>
 
-<div id="helpModal">
-  <div class="help-content">
+<!-- Приветствие -->
+<div id="welcomeModal" class="modal" style="display: flex;">
+  <div class="modal-content">
+    <h2 style="color: #ffb400; margin-top: 0;">Welcome!</h2>
+    <p style="line-height: 1.6; font-size: 16px;">
+      I'm glad to see you here!<br><br>
+      <b>Sound issue?</b> Tap <span style="color: #ff5050; font-weight: bold;">REPAIR</span> to fix loading errors, then press Play again.<br><br>
+      <i>Have a great rest, Vlad.</i>
+    </p>
+    <button class="modal-btn" id="closeWelcome">Let's go!</button>
+  </div>
+</div>
+
+<!-- Помощь -->
+<div id="helpModal" class="modal">
+  <div class="modal-content">
     <h2 id="modalTitle" style="color: #ffb400; margin-top: 0;">GUIDE</h2>
     <p id="hRepairD">If tiles blink red or sounds hang, press REPAIR.</p>
-    <button id="closeHelp" style="background:#ffb400; border:none; padding:12px 25px; border-radius:12px; font-weight:bold; cursor:pointer; margin-top:15px; color:black;">OK</button>
+    <button class="modal-btn" id="closeHelp">OK</button>
   </div>
 </div>
 
@@ -140,7 +159,7 @@
 </div>
 
 <script>
-let audioCtx = null, globalAnalyser = null, dataArray = null;
+let audioCtx = null, globalAnalyser = null;
 let currentSpeedValue = 30, currentSleepValue = 900, langIdx = 0;
 const langOrder = ['en', 'uk', 'ru'];
 let audioElements=[], particles=[], randomActive=false, timerInterval=null;
@@ -168,7 +187,6 @@ function initAudioContext() {
   globalAnalyser = audioCtx.createAnalyser();
   globalAnalyser.fftSize = 64;
   globalAnalyser.connect(audioCtx.destination);
-  dataArray = new Uint8Array(globalAnalyser.frequencyBinCount);
 }
 
 function setupWebAudio(el) {
@@ -213,12 +231,9 @@ document.getElementById('repairBtn').onclick = () => {
         el.targetVol = 0;
         el.audio.pause();
         el.btn.classList.remove('active');
-        if(el.gainNode) el.gainNode.gain.setValueAtTime(0, audioCtx ? audioCtx.currentTime : 0);
+        if(el.gainNode && audioCtx) el.gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
     });
-    
-    // Если контекст завис - пробуем оживить
     if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-    
     updateUI();
     alert("Audio Engine Reset");
 };
@@ -327,6 +342,7 @@ document.getElementById('timerBtn').onclick = () => {
 
 document.getElementById('helpBtn').onclick = () => document.getElementById('helpModal').style.display='flex';
 document.getElementById('closeHelp').onclick = () => document.getElementById('helpModal').style.display='none';
+document.getElementById('closeWelcome').onclick = () => document.getElementById('welcomeModal').style.display='none';
 window.onresize = res;
 updateUI();
 </script>
