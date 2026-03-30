@@ -128,7 +128,7 @@ const uiTL = {
 
 let lang='en', audioElements=[], particles=[], randomActive=false, randomTimeout=null, timerInterval=null, timeLeft=0;
 
-// Звезды
+// Stars effect
 const starCanvas = document.getElementById('stars');
 const starCtx = starCanvas.getContext('2d');
 function resStars() { starCanvas.width = window.innerWidth; starCanvas.height = window.innerHeight; }
@@ -153,14 +153,14 @@ sounds.forEach((s, idx) => {
     <button class="mute-btn">🔇</button>
   `;
   grid.appendChild(track);
+  
   const audio = new Audio(s.file);
   audio.loop = true;
-  audio.volume = 0.5;
+  audio.volume = 1.0; // По умолчанию громкость 1.0 (уровень 6)
   
-  // Добавляем свойство для хранения пользовательской громкости
   const state = {
     audio: audio,
-    userVolume: 0.5, // По умолчанию 0.5
+    userVolume: 1.0, // Запоминаем уровень 6 как стандартный
     btn: track.querySelector('.sound-button'),
     muteBtn: track.querySelector('.mute-btn'),
     color: s.color,
@@ -171,13 +171,13 @@ sounds.forEach((s, idx) => {
     }
   };
 
-  state.updateStepsUI(0.5);
+  state.updateStepsUI(1.0); // Закрашиваем все 6 полосок
 
   const steps = track.querySelectorAll('.step');
   steps.forEach(st => {
     st.addEventListener('click', () => {
       const vol = parseFloat(st.dataset.level);
-      state.userVolume = vol; // Запоминаем выбор пользователя
+      state.userVolume = vol; 
       audio.volume = vol; 
       audio.muted = false;
       state.updateStepsUI(vol);
@@ -225,7 +225,7 @@ function setLang(l) {
     updateRandomBtnText();
 }
 
-// Таймер
+// Timer logic
 document.getElementById('timerBtn').addEventListener('click', function() {
     if (timerInterval) stopTimer(); else startTimer();
 });
@@ -285,7 +285,7 @@ function runRandom() {
     if (nextActive.includes(el)) {
       if (el.audio.paused || el.audio.muted) {
         el.audio.muted = false;
-        fadeIn(el); // Теперь fadeIn использует el.userVolume
+        fadeIn(el); 
         el.btn.classList.add('active');
         el.muteBtn.style.background = 'rgba(255,0,0,0.3)';
         el.updateStepsUI(el.userVolume);
@@ -302,7 +302,7 @@ function runRandom() {
   randomTimeout = setTimeout(runRandom, parseInt(document.getElementById('randomInterval').value)*1000);
 }
 
-// Визуализация
+// Visualization
 const visCanvas = document.getElementById('vis');
 const visCtx = visCanvas.getContext('2d');
 visCanvas.width = window.innerWidth; visCanvas.height = window.innerHeight;
@@ -331,11 +331,10 @@ function animate(){
 }
 animate();
 
-// Функции Fade теперь работают с userVolume
 function fadeIn(el) { 
     clearInterval(el.fadeInterval);
     const a = el.audio;
-    const targetVol = el.userVolume; // Берем сохраненную громкость пользователя
+    const targetVol = el.userVolume; 
     a.muted = false; a.play(); 
     let v = a.volume;
     el.fadeInterval = setInterval(() => { 
