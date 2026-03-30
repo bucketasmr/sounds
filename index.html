@@ -61,77 +61,76 @@
     background: rgba(255,255,255,0.4);
   }
 
-  /* сетка для десктопа */
   .sound-grid {
     display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    justify-content: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 20px;
+    padding-bottom: 20px;
     width: 100%;
+    justify-content: center;
   }
 
-  /* кнопки звуков */
-  .sound-button {
-    position: relative;
-    width: 140px;
-    height: 140px;
-    background: rgba(255,255,255,0.3);
-    border-radius: 20px;
+  .sound-track {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: 0.2s;
-    backdrop-filter: blur(8px);
-    text-align: center;
-    padding: 10px;
     flex-shrink: 0;
-  }
-
-  .sound-button:hover {
-    transform: scale(1.05);
-    background: rgba(255,255,255,0.5);
-  }
-
-  .sound-button.active {
-    box-shadow: 0 0 20px #4ade80;
-  }
-
-  .sound-button span {
-    margin-bottom: 8px;
-    font-size: 14px;
-    pointer-events: none;
+    width: 70px;
   }
 
   .volume-slider {
-    width: 80%;
-    -webkit-appearance: none;
-    height: 8px;
-    border-radius: 4px;
+    writing-mode: bt-lr; /* вертикальный */
+    -webkit-appearance: slider-vertical;
+    width: 100%;
+    height: 150px;
+    margin-bottom: 10px;
     background: rgba(255,255,255,0.2);
+    border-radius: 8px;
     outline: none;
-    transition: 0.2s;
     cursor: pointer;
+    transform: rotate(0deg); /* перевернут низ-так = тихо, верх = громко */
   }
 
   .volume-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #ffb400;
+    box-shadow: 0 0 5px #ffb400;
+    cursor: pointer;
+  }
+
+  .volume-slider::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
     border-radius: 50%;
     background: #ffb400;
     cursor: pointer;
     box-shadow: 0 0 5px #ffb400;
   }
 
-  .volume-slider::-moz-range-thumb {
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #ffb400;
+  .sound-button {
+    width: 70px;
+    height: 40px;
+    border: none;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.3);
+    color: white;
+    font-weight: bold;
     cursor: pointer;
-    box-shadow: 0 0 5px #ffb400;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(6px);
+    transition: 0.2s;
+  }
+
+  .sound-button.active {
+    background: rgba(74, 222, 128, 0.7);
+    box-shadow: 0 0 10px #4ade80;
   }
 
   canvas {
@@ -139,32 +138,12 @@
     top:0; left:0;
     z-index: 0;
   }
-
-  /* Адаптация для мобильных */
-  @media (max-width: 768px) {
-    .sound-grid {
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      padding-bottom: 10px;
-    }
-
-    .sound-button {
-      width: 180px;
-      height: 180px;
-    }
-
-    .volume-slider {
-      width: 90%;
-    }
-  }
-
 </style>
 </head>
 <body>
 <div class="overlay"></div>
 <div class="container">
   <h1 id="title">ASMR Mixer</h1>
-
   <div class="lang-buttons">
     <button onclick="setLang('en')">English</button>
     <button onclick="setLang('ru')">Русский</button>
@@ -178,12 +157,12 @@
 
 <script>
 const sounds = [
-  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/bigpink.wav', name: {en:'Big Pink', ru:'Биг Пинк', uk:'Біг Пінк'}},
-  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/choko.wav', name: {en:'Choko', ru:'Чоко', uk:'Чоко'}},
   {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/purplebrush.wav', name: {en:'Purple Brush', ru:'Пурпл Браш', uk:'Пурпл Браш'}},
+  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/choko.wav', name: {en:'Choko', ru:'Чоко', uk:'Чоко'}},
   {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/strawberry.wav', name: {en:'Strawberry', ru:'Клубника', uk:'Полуниця'}},
   {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/wax.wav', name: {en:'Wax', ru:'Воск', uk:'Віск'}},
-  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/woodandrocks.wav', name: {en:'Wood & Rocks', ru:'Дерево и камни', uk:'Дерево і камені'}}
+  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/woodandrocks.wav', name: {en:'Wood & Rocks', ru:'Дерево и камни', uk:'Дерево і камені'}},
+  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/bigpink.wav', name: {en:'Big Pink', ru:'Биг Пинк', uk:'Біг Пінк'}}
 ];
 
 let lang = 'en';
@@ -194,31 +173,32 @@ function setLang(l){
   lang = l;
   document.getElementById('title').innerText = lang==='en'?'ASMR Mixer':(lang==='ru'?'АСМР Миксер':'АСМР Міксер');
   audioElements.forEach((a,i)=>{
-    a.btn.querySelector('span').innerText = sounds[i].name[lang];
+    a.btn.innerText = sounds[i].name[lang];
   });
 }
 
-sounds.forEach((s, i)=>{
-  const btn = document.createElement('div');
-  btn.className = 'sound-button';
-  btn.innerHTML = `<span>${s.name[lang]}</span><input type="range" min="0" max="1" step="0.01" value="0.5" class="volume-slider">`;
-  grid.appendChild(btn);
+sounds.forEach((s,i)=>{
+  const track = document.createElement('div');
+  track.className = 'sound-track';
+  track.innerHTML = `
+    <input type="range" min="0" max="1" step="0.01" value="0.5" class="volume-slider">
+    <button class="sound-button">${s.name[lang]}</button>
+  `;
+  grid.appendChild(track);
 
   const audio = new Audio(s.file);
   audio.loop = true;
   audio.volume = 0.5;
 
-  const slider = btn.querySelector('.volume-slider');
-  slider.addEventListener('input', e=>{
-    audio.volume = e.target.value;
-  });
+  const slider = track.querySelector('.volume-slider');
+  const btn = track.querySelector('.sound-button');
 
+  slider.addEventListener('input', e => { audio.volume = e.target.value; });
   btn.addEventListener('click', e=>{
-    if(e.target.classList.contains('volume-slider')) return;
     if(audio.paused){
       audio.play();
       btn.classList.add('active');
-    }else{
+    } else {
       audio.pause();
       btn.classList.remove('active');
     }
@@ -227,7 +207,7 @@ sounds.forEach((s, i)=>{
   audioElements.push({audio, btn, slider});
 });
 
-// визуализация на canvas
+// визуализация
 const canvas = document.getElementById('vis');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
@@ -235,7 +215,7 @@ canvas.height = window.innerHeight;
 
 function animate(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  audioElements.forEach((a,i)=>{
+  audioElements.forEach(a=>{
     if(!a.audio.paused){
       const x = Math.random()*canvas.width;
       const y = Math.random()*canvas.height;
@@ -254,7 +234,6 @@ window.addEventListener('resize', ()=>{
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 });
-
 </script>
 </body>
 </html>
