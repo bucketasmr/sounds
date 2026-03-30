@@ -9,17 +9,27 @@
     margin: 0;
     padding: 0;
     height: 100%;
-    background: url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1950&q=80') no-repeat center center fixed;
-    background-size: cover;
+    background: radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%);
     font-family: Arial, sans-serif;
     color: white;
     overflow: hidden;
   }
 
+  body::after {
+    content: "";
+    position: fixed;
+    top:0; left:0;
+    width:100%;
+    height:100%;
+    background: transparent url('https://raw.githubusercontent.com/andreygolikov/star-background/main/stars.png') repeat top center;
+    z-index:0;
+    pointer-events:none;
+  }
+
   .overlay {
     position: absolute;
     top:0; left:0; right:0; bottom:0;
-    background: rgba(0,0,0,0.6);
+    background: rgba(0,0,0,0.4);
     z-index: 1;
   }
 
@@ -40,12 +50,13 @@
     text-align: center;
   }
 
-  .lang-buttons {
+  .lang-buttons, .random-controls {
     margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
   }
 
-  .lang-buttons button {
-    margin: 0 5px;
+  .lang-buttons button, .random-controls button, .random-controls select {
     padding: 8px 14px;
     border: none;
     border-radius: 12px;
@@ -57,7 +68,7 @@
     backdrop-filter: blur(5px);
   }
 
-  .lang-buttons button:hover {
+  .lang-buttons button:hover, .random-controls button:hover, .random-controls select:hover {
     background: rgba(255,255,255,0.4);
   }
 
@@ -80,7 +91,7 @@
   }
 
   .volume-slider {
-    writing-mode: bt-lr; /* вертикальный */
+    writing-mode: bt-lr;
     -webkit-appearance: slider-vertical;
     width: 100%;
     height: 150px;
@@ -89,7 +100,6 @@
     border-radius: 8px;
     outline: none;
     cursor: pointer;
-    transform: rotate(0deg); /* перевернут низ-так = тихо, верх = громко */
   }
 
   .volume-slider::-webkit-slider-thumb {
@@ -129,8 +139,7 @@
   }
 
   .sound-button.active {
-    background: rgba(74, 222, 128, 0.7);
-    box-shadow: 0 0 10px #4ade80;
+    box-shadow: 0 0 10px #fff;
   }
 
   canvas {
@@ -144,10 +153,22 @@
 <div class="overlay"></div>
 <div class="container">
   <h1 id="title">BUCKET ASMR</h1>
+
   <div class="lang-buttons">
     <button onclick="setLang('en')">English</button>
     <button onclick="setLang('ru')">Русский</button>
     <button onclick="setLang('uk')">Українська</button>
+  </div>
+
+  <div class="random-controls">
+    <button id="randomBtn">Random OFF</button>
+    <select id="randomInterval">
+      <option value="0">Произвольно</option>
+      <option value="30">30 секунд</option>
+      <option value="60">1 минута</option>
+      <option value="120">2 минуты</option>
+      <option value="300">5 минут</option>
+    </select>
   </div>
 
   <div class="sound-grid" id="soundGrid"></div>
@@ -157,26 +178,26 @@
 
 <script>
 const sounds = [
-  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/purplebrush.wav', name: {en:'Brush', ru:'Кисть', uk:'Пензель'}},
-  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/strawberry.wav', name: {en:'Strawberry', ru:'Клубника', uk:'Полуниця'}},
-  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/wax.wav', name: {en:'Wax', ru:'Воск', uk:'Віск'}},
-  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/woodandrocks.wav', name: {en:'Wood & Rocks', ru:'Дерево и камни', uk:'Дерево і камені'}},
-  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/choko.wav', name: {en:'Choko', ru:'Шоколад', uk:'Шоколад'}},
-  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/bigpink.wav', name: {en:'Pink brush', ru:'Розовая щетка', uk:'Рожева щiтка'}}
+  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/purplebrush.wav', name: {en:'Brush', ru:'Кисть', uk:'Пензель'}, color: 'rgba(150,100,255,0.2)'},
+  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/choko.wav', name: {en:'Choko', ru:'Шоколад', uk:'Шоколад'}, color: 'rgba(139,69,19,0.2)'},
+  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/strawberry.wav', name: {en:'Strawberry', ru:'Клубника', uk:'Полуниця'}, color: 'rgba(255,105,180,0.2)'},
+  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/wax.wav', name: {en:'Wax', ru:'Воск', uk:'Віск'}, color: 'rgba(255,165,0,0.2)'},
+  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/woodandrocks.wav', name: {en:'Wood & Rocks', ru:'Дерево и камни', uk:'Дерево і камені'}, color: 'rgba(255,255,0,0.2)'},
+  {file: 'https://raw.githubusercontent.com/bukcetasmr/sounds/main/bigpink.wav', name: {en:'Pink brush', ru:'Розовая щетка', uk:'Рожева щiтка'}, color: 'rgba(255,182,193,0.2)'}
 ];
 
 let lang = 'en';
 const grid = document.getElementById('soundGrid');
 const audioElements = [];
+const particles = [];
 
 function setLang(l){
   lang = l;
   document.getElementById('title').innerText = lang==='en'?'BUCKET ASMR':(lang==='ru'?'ВЕДРО АСМР':'ВIДРО АСМР');
-  audioElements.forEach((a,i)=>{
-    a.btn.innerText = sounds[i].name[lang];
-  });
+  audioElements.forEach((a,i)=>{ a.btn.innerText = sounds[i].name[lang]; });
 }
 
+// Создаем треки
 sounds.forEach((s,i)=>{
   const track = document.createElement('div');
   track.className = 'sound-track';
@@ -204,28 +225,51 @@ sounds.forEach((s,i)=>{
     }
   });
 
-  audioElements.push({audio, btn, slider});
+  audioElements.push({audio, btn, slider, color: s.color});
 });
 
-// визуализация
+// визуализация частиц
 const canvas = document.getElementById('vis');
 const ctx = canvas.getContext('2d');
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 function animate(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle = 'rgba(0,0,0,0.05)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
   audioElements.forEach(a=>{
-    if(!a.audio.paused){
-      const x = Math.random()*canvas.width;
-      const y = Math.random()*canvas.height;
-      const radius = a.audio.volume*60 + Math.random()*20;
-      ctx.beginPath();
-      ctx.arc(x,y,radius,0,Math.PI*2);
-      ctx.fillStyle = `rgba(255,255,255,${a.audio.volume*0.3})`;
-      ctx.fill();
+    if(!a.audio.paused && Math.random() < 0.3){
+      particles.push({
+        x: Math.random()*canvas.width,
+        y: canvas.height + 10,
+        radius: a.audio.volume*15 + Math.random()*10,
+        speed: 0.2 + Math.random()*0.3,
+        alpha: 0.05 + Math.random()*0.1,
+        color: a.color
+      });
     }
   });
+
+  for(let i=particles.length-1; i>=0; i--){
+    const p = particles[i];
+    p.y -= p.speed;
+    p.alpha *= 0.995;
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.radius,0,Math.PI*2);
+    ctx.fillStyle = p.color.replace('0.2', p.alpha.toFixed(2));
+    ctx.fill();
+    if(p.alpha < 0.01) particles.splice(i,1);
+  }
+
+  audioElements.forEach(a=>{
+    if(!a.audio.paused){
+      a.btn.style.backgroundColor = a.color.replace('0.2','0.7');
+    } else {
+      a.btn.style.backgroundColor = 'rgba(255,255,255,0.3)';
+    }
+  });
+
   requestAnimationFrame(animate);
 }
 animate();
@@ -234,6 +278,53 @@ window.addEventListener('resize', ()=>{
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 });
+
+// Randomizer
+let randomActive = false;
+let randomTimer = null;
+
+const randomBtn = document.getElementById('randomBtn');
+const randomInterval = document.getElementById('randomInterval');
+
+randomBtn.addEventListener('click', ()=>{
+  randomActive = !randomActive;
+  randomBtn.innerText = randomActive ? 'Random ON' : 'Random OFF';
+  if(randomActive) scheduleRandom();
+  else clearTimeout(randomTimer);
+});
+
+function scheduleRandom(){
+  let intervalSec = parseInt(randomInterval.value);
+  if(intervalSec === 0) intervalSec = Math.floor(Math.random()*10)+5; // случайно 5-15 секунд
+  randomTimer = setTimeout(()=>{
+    triggerRandom();
+    if(randomActive) scheduleRandom();
+  }, intervalSec*1000);
+}
+
+function triggerRandom(){
+  const total = audioElements.length;
+  const activeCount = Math.floor(Math.random()*(total)+1); // от 1 до total
+  const indices = Array.from({length: total}, (_, i)=>i);
+  shuffle(indices);
+  const selected = indices.slice(0, activeCount);
+
+  audioElements.forEach((a,i)=>{
+    if(selected.includes(i)){
+      if(a.audio.paused){ a.audio.play(); a.btn.classList.add('active'); }
+    } else {
+      if(!a.audio.paused){ a.audio.pause(); a.btn.classList.remove('active'); }
+    }
+  });
+}
+
+// Перемешивание массива
+function shuffle(array){
+  for(let i=array.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
 </script>
 </body>
 </html>
