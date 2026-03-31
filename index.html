@@ -53,11 +53,11 @@
     aspect-ratio: 1 / 1; border: none; border-radius: 20px; 
     background: rgba(255,255,255,0.05); color:rgba(255,255,255,0.2); font-weight:bold; 
     cursor:pointer; display:flex; flex-direction: column; justify-content:center; align-items:center; 
-    backdrop-filter: blur(8px); transition: 0.3s; font-size: 12px; text-align: center;
+    backdrop-filter: blur(8px); transition: 0.3s; font-size: 11px; text-align: center;
     border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden;
+    padding: 5px;
   }
 
-  /* Статусы кнопок */
   .sound-button.loading { animation: pulse-load 1.2s infinite; color: #ffb400; }
   .sound-button.ready { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.1); }
   .sound-button.active { box-shadow: 0 0 20px rgba(255,255,255,0.2); color: white; }
@@ -154,8 +154,12 @@ const langOrder = ['en', 'uk', 'ru'];
 let audioElements = [], particles = [];
 
 const sounds = [
-  {file:'purplebrush.mp3', name:{en:'Brush', ru:'Кисть', uk:'Пензель'}, color:'rgba(150,100,255,0.5)'},
+  {file:'purplebruhs.mp3', name:{en:'Purple Brush', ru:'Фиолетовая кисть', uk:'Фіолетовий пензель'}, color:'rgba(150,100,255,0.5)'},
   {file:'choko.mp3', name:{en:'Choco', ru:'Шоколад', uk:'Шоколад'}, color:'rgba(139,69,19,0.5)'},
+  {file:'carrot.mp3', name:{en:'Carrot', ru:'Морковь', uk:'Морква'}, color:'rgba(255,140,0,0.5)'},
+  {file:'oldphone.mp3', name:{en:'Old Phone', ru:'Старый телефон', uk:'Старий телефон'}, color:'rgba(50,50,50,0.5)'},
+  {file:'greybrush.mp3', name:{en:'Grey Brush', ru:'Серая кисть', uk:'Сірий пензель'}, color:'rgba(169,169,169,0.5)'},
+  {file:'pinksoftbrush.mp3', name:{en:'Soft Brush', ru:'Мягкая кисть', uk:'М’який пензель'}, color:'rgba(255,182,193,0.5)'},
   {file:'strawberry.mp3', name:{en:'Strawberry', ru:'Клубника', uk:'Полуниця'}, color:'rgba(255,105,180,0.5)'},
   {file:'wax.mp3', name:{en:'Wax', ru:'Воск', uk:'Віск'}, color:'rgba(255,165,0,0.5)'},
   {file:'woodandrocks.mp3', name:{en:'Wood', ru:'Дерево', uk:'Дерево'}, color:'rgba(255,255,0,0.5)'}
@@ -167,24 +171,18 @@ const uiTL = {
   uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ" }
 };
 
-// --- УЛУЧШЕННАЯ ЗАГРУЗКА ---
 async function smartLoad(state, file) {
     if (state.isLoaded) return;
     state.btn.classList.add('loading');
     state.btn.classList.remove('broken', 'ready');
-    
-    // Cache buster + уникальный ID попытки
     const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${file}?v=${Date.now()}`;
-    
     try {
         const response = await fetch(url);
         if (!response.ok) throw new Error();
         const blob = await response.blob();
         const objectURL = URL.createObjectURL(blob);
-        
         state.audio.src = objectURL;
         state.audio.load();
-        
         return new Promise((resolve) => {
             state.audio.oncanplaythrough = () => {
                 state.btn.classList.remove('loading', 'broken');
@@ -192,8 +190,7 @@ async function smartLoad(state, file) {
                 state.isLoaded = true;
                 resolve(true);
             };
-            // Тайм-аут ожидания медиа-движка
-            setTimeout(() => resolve(false), 10000);
+            setTimeout(() => resolve(false), 15000);
         });
     } catch (e) {
         state.btn.classList.remove('loading');
@@ -205,8 +202,7 @@ async function smartLoad(state, file) {
 async function startQueue() {
     for (let state of audioElements) {
         await smartLoad(state, state.fileName);
-        // Небольшая пауза между запросами для Safari
-        await new Promise(r => setTimeout(r, 100)); 
+        await new Promise(r => setTimeout(r, 150)); 
     }
 }
 
@@ -267,7 +263,6 @@ function fadeOut(el) {
   setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 1000);
 }
 
-// --- ВИЗУАЛ ---
 const sCan = document.getElementById('stars'); const sCtx = sCan.getContext('2d');
 const vCan = document.getElementById('vis'); const vCtx = vCan.getContext('2d');
 function res() { sCan.width = vCan.width = innerWidth; sCan.height = vCan.height = innerHeight; }
@@ -307,7 +302,6 @@ function animate(){
 }
 animate();
 
-// --- LOGIC ---
 function runRandom() { 
   if(!randomActive) return; 
   let readySounds = audioElements.filter(el => el.isLoaded);
