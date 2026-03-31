@@ -117,8 +117,8 @@
   <div class="modal-content">
     <h2 style="color: #ffb400; margin-top: 0;">BUCKET ASMR</h2>
     <p style="line-height: 1.6; font-size: 15px;">
-      Звуки загружаются последовательно для стабильной работы.<br><br>
-      Если кнопка <b>красная</b> или долго <b>мигает</b> — нажми на неё для повторной загрузки.
+      Нажмите "Начать" для активации звука.<br><br>
+      Если кнопка <b>красная</b> — нажмите на неё для повторной загрузки.
     </p>
     <button class="modal-btn" id="closeWelcome">Начать</button>
   </div>
@@ -153,7 +153,6 @@ let currentSpeedValue = 10, langIdx = 0, randomActive = false, nextCycleTimeout 
 const langOrder = ['en', 'uk', 'ru'];
 let audioElements = [], particles = [];
 
-// Имена файлов проверены по твоему списку
 const sounds = [
   {file:'purplebrush.mp3', name:{en:'Purple Brush', ru:'Фиолетовая кисть', uk:'Фіолетовий пензель'}, color:'rgba(150,100,255,0.5)'},
   {file:'choko.mp3', name:{en:'Choco', ru:'Шоколад', uk:'Шоколад'}, color:'rgba(139,69,19,0.5)'},
@@ -172,19 +171,19 @@ const uiTL = {
   uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ" }
 };
 
+// Исправленная функция загрузки специально для Safari/iPhone
 async function smartLoad(state, file) {
     if (state.isLoaded) return;
     state.btn.classList.add('loading');
     state.btn.classList.remove('broken', 'ready');
-    const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${file}?v=${Date.now()}`;
+    
+    // Уникальный ID для каждой загрузки (обход кэша)
+    const cacheBuster = Math.random().toString(36).substring(7);
+    const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${file}?v=${cacheBuster}`;
     
     try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error();
-        const blob = await response.blob();
-        const objectURL = URL.createObjectURL(blob);
-        
-        state.audio.src = objectURL;
+        // На iOS используем прямую установку src для стабильности
+        state.audio.src = url;
         state.audio.load();
         
         return new Promise((resolve) => {
@@ -194,20 +193,24 @@ async function smartLoad(state, file) {
                 state.isLoaded = true;
                 resolve(true);
             };
-            setTimeout(() => resolve(false), 15000);
+            state.audio.onerror = () => {
+                state.btn.classList.remove('loading');
+                state.btn.classList.add('broken');
+                resolve(false);
+            };
+            // Тайм-аут загрузки
+            setTimeout(() => { if(!state.isLoaded) resolve(false); }, 12000);
         });
     } catch (e) {
-        state.btn.classList.remove('loading');
+        state.btn.classList.remove('loading', 'ready');
         state.btn.classList.add('broken');
         return false;
     }
 }
 
 async function startQueue() {
-    for (let state of audioElements) {
-        await smartLoad(state, state.fileName);
-        await new Promise(r => setTimeout(r, 200)); 
-    }
+    // На iPhone запускаем всё параллельно для скорости
+    audioElements.forEach(state => smartLoad(state, state.fileName));
 }
 
 function initAudioContext() {
@@ -238,8 +241,6 @@ sounds.forEach((s) => {
   };
   audioElements.push(state);
 });
-
-startQueue();
 
 function fadeIn(el) {
   if (!audioCtx) initAudioContext();
@@ -321,7 +322,12 @@ document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); 
 document.getElementById('langBtn').onclick = () => { langIdx = (langIdx + 1) % 3; updateUI(); };
 document.getElementById('randomBtn').onclick = () => { initAudioContext(); randomActive = !randomActive; if(randomActive) runRandom(); else { clearTimeout(nextCycleTimeout); audioElements.forEach(fadeOut); } updateUI(); };
 document.getElementById('repairBtn').onclick = () => location.reload();
-document.getElementById('closeWelcome').onclick = () => { initAudioContext(); document.getElementById('welcomeModal').style.display='none'; };
+
+document.getElementById('closeWelcome').onclick = () => { 
+  initAudioContext(); 
+  document.getElementById('welcomeModal').style.display='none'; 
+  startQueue(); // Запускаем загрузку ПОСЛЕ клика "Начать"
+};
 
 function updateUI(){
   const t=uiTL[langOrder[langIdx]];
