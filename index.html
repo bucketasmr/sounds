@@ -9,7 +9,9 @@
 <style>
   body, html {
     margin: 0; padding: 0; height: 100%;
+    /* Добавляем плавный переход для фонового градиента (Северное сияние) */
     background: radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%);
+    transition: background 3s ease;
     font-family: Arial, sans-serif; color: white; overflow: hidden;
     touch-action: manipulation; -webkit-user-select: none; user-select: none;
   }
@@ -157,6 +159,11 @@ let currentSpeedValue = 6, langIdx = 0, randomActive = false, nextCycleTimeout =
 const langOrder = ['en', 'uk', 'ru'];
 let audioElements = [], particles = [];
 
+// --- ПЕРЕМЕННЫЕ ДЛЯ СОБЫТИЙ ---
+let comet = null;
+let supernova = null;
+let fogParticles = Array.from({length: 5}, () => ({ x: Math.random()*innerWidth, y: Math.random()*innerHeight, r: 150+Math.random()*100, opacity: 0.03 + Math.random()*0.05, vx: Math.random()*0.2 - 0.1 }));
+
 const sounds = [
   {file:'purplebrush.mp3', name:{en:'Purple Brush', ru:'Фиолетовая кисть', uk:'Фіолетовий пензель'}, color:'rgba(150,100,255,0.5)'},
   {file:'choko.mp3', name:{en:'Choco', ru:'Шоколад', uk:'Шоколад'}, color:'rgba(139,69,19,0.5)'},
@@ -216,7 +223,6 @@ function handleLoadError(state) {
     state.btn.classList.remove('loading');
     state.btn.classList.add('broken');
     if (state.retryTimer) clearTimeout(state.retryTimer);
-    // Повтор через 1 секунду по просьбе
     state.retryTimer = setTimeout(() => { if (!state.isLoaded) smartLoad(state); }, 1000);
 }
 
@@ -226,6 +232,7 @@ function initAudioContext() {
   globalAnalyser = audioCtx.createAnalyser();
   globalAnalyser.fftSize = 64;
   globalAnalyser.connect(audioCtx.destination);
+  scheduleEvents(); // Запуск случайных событий
 }
 
 function showHelp() {
@@ -283,10 +290,82 @@ function res() { sCan.width = vCan.width = innerWidth; sCan.height = vCan.height
 window.onresize = res; res();
 const starsArr = Array.from({length:80}, () => ({ x:Math.random()*innerWidth, y:Math.random()*innerHeight, r:Math.random()*1.5, a:Math.random(), t:Math.random()*0.01 }));
 
+// --- ФУНКЦИИ СОБЫТИЙ ---
+function triggerComet() {
+    if (comet) return;
+    comet = { x: -200, y: Math.random() * (innerHeight/2), speed: 8 + Math.random()*7, angle: 0.2 + Math.random()*0.3, len: 200, opacity: 0.8 };
+}
+
+function triggerSupernova() {
+    if (supernova) return;
+    supernova = { x: Math.random()*innerWidth, y: Math.random()*innerHeight, r: 1, maxR: 40 + Math.random()*40, opacity: 0, stage: 'growing' };
+}
+
+function triggerAurora() {
+    const colors = [
+        'radial-gradient(ellipse at bottom, #051510 0%, #0a0a1f 100%)', // Зеленоватый
+        'radial-gradient(ellipse at bottom, #100515 0%, #0a0a1f 100%)', // Фиолетовый
+        'radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%)'  // Дефолт
+    ];
+    document.body.style.background = colors[Math.floor(Math.random()*colors.length)];
+}
+
+function scheduleEvents() {
+    setInterval(() => { if(Math.random() < 0.2) triggerComet(); }, 15000);
+    setInterval(() => { if(Math.random() < 0.1) triggerSupernova(); }, 20000);
+    setInterval(() => { if(Math.random() < 0.3) triggerAurora(); }, 30000);
+}
+
 function animate(){
   sCtx.clearRect(0,0,innerWidth,innerHeight);
   starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; sCtx.beginPath(); sCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; sCtx.fill(); });
   vCtx.clearRect(0,0,innerWidth,innerHeight);
+
+  // Отрисовка Тумана
+  fogParticles.forEach(f => {
+      f.x += f.vx;
+      if (f.x > innerWidth + f.r) f.x = -f.r;
+      if (f.x < -f.r) f.x = innerWidth + f.r;
+      let g = vCtx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
+      g.addColorStop(0, `rgba(255, 255, 255, ${f.opacity})`);
+      g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      vCtx.fillStyle = g;
+      vCtx.fillRect(f.x - f.r, f.y - f.r, f.r * 2, f.r * 2);
+  });
+
+  // Отрисовка Кометы
+  if (comet) {
+      vCtx.beginPath();
+      let g = vCtx.createLinearGradient(comet.x, comet.y, comet.x - comet.len, comet.y - (comet.len * comet.angle));
+      g.addColorStop(0, `rgba(255, 220, 150, ${comet.opacity})`);
+      g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      vCtx.strokeStyle = g; vCtx.lineWidth = 2;
+      vCtx.moveTo(comet.x, comet.y);
+      vCtx.lineTo(comet.x - comet.len, comet.y - (comet.len * comet.angle));
+      vCtx.stroke();
+      comet.x += comet.speed; comet.y += comet.speed * comet.angle;
+      if (comet.x > innerWidth + 300) comet = null;
+  }
+
+  // Отрисовка Суперновы
+  if (supernova) {
+      vCtx.beginPath();
+      let g = vCtx.createRadialGradient(supernova.x, supernova.y, 0, supernova.x, supernova.y, supernova.r);
+      g.addColorStop(0, `rgba(255, 255, 255, ${supernova.opacity})`);
+      g.addColorStop(0.2, `rgba(255, 200, 50, ${supernova.opacity*0.5})`);
+      g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      vCtx.fillStyle = g;
+      vCtx.arc(supernova.x, supernova.y, supernova.r, 0, Math.PI*2);
+      vCtx.fill();
+      if (supernova.stage === 'growing') {
+          supernova.r += 0.5; supernova.opacity += 0.02;
+          if (supernova.opacity >= 0.8) supernova.stage = 'fading';
+      } else {
+          supernova.r += 0.2; supernova.opacity -= 0.01;
+          if (supernova.opacity <= 0) supernova = null;
+      }
+  }
+
   audioElements.forEach(el => {
     if(el.analyser && el.btn.classList.contains('active')) {
         el.analyser.getByteFrequencyData(el.tileDataArray);
@@ -297,6 +376,7 @@ function animate(){
         if(Math.random() < (0.05 + vol/255*0.4)) particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
     } else if(el.isLoaded) { el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; el.visBar.style.width = '0%'; }
   });
+
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i]; p.y -= p.s; p.al -= 0.001;
     vCtx.beginPath(); vCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
@@ -308,19 +388,11 @@ function animate(){
 }
 animate();
 
-// Умный рандом: 25% шанс на 3-4 звука, 75% на 1-2
 function runRandom() { 
   if(!randomActive) return; 
   let readySounds = audioElements.filter(el => el.isLoaded);
   if (readySounds.length === 0) { nextCycleTimeout = setTimeout(runRandom, 1000); return; }
-  
-  let count;
-  if (Math.random() < 0.25) {
-      count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3); // 3-4
-  } else {
-      count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1); // 1-2
-  }
-  
+  let count = Math.random() < 0.25 ? Math.min(readySounds.length, Math.floor(Math.random() * 2) + 3) : Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1);
   let toPlay = readySounds.sort(() => 0.5 - Math.random()).slice(0, count);
   audioElements.forEach(el => toPlay.includes(el) ? fadeIn(el) : fadeOut(el));
   nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000); 
@@ -328,8 +400,7 @@ function runRandom() {
 
 let currentSpeedKey = 'fast';
 function setSpeed(v, key) { 
-    currentSpeedValue = v; 
-    currentSpeedKey = key;
+    currentSpeedValue = v; currentSpeedKey = key;
     const t = uiTL[langOrder[langIdx]];
     document.getElementById('speedTrigger').innerText = t.speeds[key]; 
     document.getElementById('speedDropdown').classList.remove('open'); 
@@ -337,16 +408,9 @@ function setSpeed(v, key) {
 }
 
 document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); document.getElementById('speedDropdown').classList.toggle('open'); };
-
-// Общий обработчик смены языка
 document.querySelectorAll('.lang-switcher-btn').forEach(btn => {
-    btn.onclick = (e) => {
-        e.stopPropagation();
-        langIdx = (langIdx + 1) % 3;
-        updateUI();
-    };
+    btn.onclick = (e) => { e.stopPropagation(); langIdx = (langIdx + 1) % 3; updateUI(); };
 });
-
 document.getElementById('randomBtn').onclick = () => { initAudioContext(); randomActive = !randomActive; if(randomActive) runRandom(); else { clearTimeout(nextCycleTimeout); audioElements.forEach(fadeOut); } updateUI(); };
 document.getElementById('repairBtn').onclick = () => location.reload();
 document.getElementById('closeWelcome').onclick = () => { 
@@ -364,12 +428,8 @@ function updateUI(){
   document.getElementById('welcomeText').innerText=t.welcome;
   document.getElementById('repairHint').innerText=t.repairHint;
   document.getElementById('speedTrigger').innerText=t.speeds[currentSpeedKey];
-  
   const speedBtns = document.querySelectorAll('#speedDropdown button');
-  speedBtns[0].innerText = t.speeds.fast;
-  speedBtns[1].innerText = t.speeds.medium;
-  speedBtns[2].innerText = t.speeds.slow;
-
+  speedBtns[0].innerText = t.speeds.fast; speedBtns[1].innerText = t.speeds.medium; speedBtns[2].innerText = t.speeds.slow;
   audioElements.forEach((el,i)=>el.btn.querySelector('span').innerText=sounds[i].name[langOrder[langIdx]]);
 }
 window.onclick=()=>document.getElementById('speedDropdown').classList.remove('open');
