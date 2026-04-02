@@ -69,6 +69,18 @@
     padding: 5px;
   }
 
+  /* Индикатор прогресса (фон) */
+  .sound-button::before {
+    content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 0%;
+    background: linear-gradient(to top, rgba(255, 180, 0, 0.3), transparent);
+    transition: height 0.4s ease-out; z-index: -1;
+  }
+  .sound-button.loading::before { height: var(--load-percent, 10%); animation: loading-pulse 1.5s infinite; }
+  
+  @keyframes loading-pulse {
+    0% { opacity: 0.4; } 50% { opacity: 0.8; } 100% { opacity: 0.4; }
+  }
+
   .mute-btn {
     position: absolute; top: 5px; right: 5px; width: 22px; height: 22px;
     background: rgba(255,255,255,0.1); border-radius: 50%; display: none;
@@ -78,15 +90,10 @@
   .sound-button.active .mute-btn { display: flex; }
   .mute-btn.muted { background: #ff5050; border-color: #ff5050; }
 
-  .sound-button.loading { animation: pulse-load 1.2s infinite; color: #ffb400; }
+  .sound-button.loading { color: #ffb400; border-color: rgba(255, 180, 0, 0.3); }
   .sound-button.ready { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.1); }
   .sound-button.active { box-shadow: 0 0 20px rgba(255,255,255,0.2); color: white; }
   .sound-button.broken { border: 2px solid rgba(255, 50, 50, 0.6) !important; color: #ff5050; }
-
-  @keyframes pulse-load {
-    0%, 100% { background: rgba(255, 180, 0, 0.05); }
-    50% { background: rgba(255, 180, 0, 0.2); }
-  }
 
   .tile-vis {
     position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
@@ -205,22 +212,47 @@ const uiTL = {
 async function smartLoad(state) {
     if (state.isLoaded) return;
     state.btn.classList.add('loading');
+    state.btn.style.setProperty('--load-percent', '15%');
+    
     const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${state.fileName}?v=${Math.random().toString(36).substring(7)}`;
+    
     try {
-        state.audio.src = url; state.audio.load();
+        state.audio.src = url;
+        state.audio.load();
+
+        // Отслеживаем прогресс загрузки для визуального фидбека
+        state.audio.onprogress = () => {
+            if (state.audio.buffered.length > 0) {
+                const percent = (state.audio.buffered.end(0) / state.audio.duration) * 100;
+                state.btn.style.setProperty('--load-percent', `${Math.max(15, percent)}%`);
+            }
+        };
+
         const success = await new Promise((resolve) => {
-            state.audio.oncanplaythrough = () => { state.btn.classList.remove('loading', 'broken'); state.btn.classList.add('ready'); state.isLoaded = true; resolve(true); };
+            state.audio.oncanplaythrough = () => {
+                state.btn.style.setProperty('--load-percent', '100%');
+                setTimeout(() => {
+                    state.btn.classList.remove('loading', 'broken');
+                    state.btn.classList.add('ready');
+                    state.isLoaded = true;
+                    resolve(true);
+                }, 300);
+            };
             state.audio.onerror = () => resolve(false);
-            setTimeout(() => resolve(false), 12000);
+            setTimeout(() => resolve(false), 15000); // Тайм-аут чуть больше для iPhone
         });
+
         if (!success) handleLoadError(state);
     } catch (e) { handleLoadError(state); }
 }
 
 function handleLoadError(state) {
-    state.isLoaded = false; state.btn.classList.remove('loading'); state.btn.classList.add('broken');
+    state.isLoaded = false;
+    state.btn.classList.remove('loading');
+    state.btn.classList.add('broken');
+    state.btn.style.setProperty('--load-percent', '0%');
     if (state.retryTimer) clearTimeout(state.retryTimer);
-    state.retryTimer = setTimeout(() => { if (!state.isLoaded) smartLoad(state); }, 1000);
+    state.retryTimer = setTimeout(() => { if (!state.isLoaded) smartLoad(state); }, 2000);
 }
 
 function initAudioContext() {
@@ -379,7 +411,11 @@ function animate(){
               particles.push({ x: Math.random()*innerWidth, y: innerHeight+10, r: ((vol/50)+5)*2, s: (0.5 + (vol/100))/3, al: 0.9, c: el.color });
           }
         }
-    } else if(el.isLoaded) { el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; el.visBar.style.width = '0%'; }
+    } else if(el.isLoaded) { 
+        el.btn.style.backgroundColor = 'rgba(255,255,255,0.15)'; 
+        el.visBar.style.width = '0%'; 
+        el.btn.style.setProperty('--load-percent', '0%');
+    }
   });
 
   if (!sleepMode) {
