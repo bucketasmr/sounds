@@ -168,30 +168,27 @@ let audioCtx = null, globalAnalyser = null;
 let currentSpeedValue = 11, currentSpeedKey = 'fast', langIdx = 0, randomActive = false, nextCycleTimeout = null;
 let sleepMode = false, animationId = null;
 let mouseX = 0, mouseY = 0, targetX = 0, targetY = 0;
-let idleTimer = null; // Таймер бездействия
+let idleTimer = null; 
 
 const langOrder = ['en', 'uk', 'ru'];
 let audioElements = [], particles = [];
 
-// Сброс таймера бездействия при движении или касании
 function resetIdleTimer() {
     clearTimeout(idleTimer);
-    idleTimer = setTimeout(startSmartAutoLoad, 1000); // 1 секунда бездействия
+    idleTimer = setTimeout(startSmartAutoLoad, 1000); 
 }
 
 window.addEventListener('mousemove', e => {
-    targetX = (e.clientX - innerWidth/2) / 60; // Чувствительность уменьшена в 2 раза
+    targetX = (e.clientX - innerWidth/2) / 60;
     targetY = (e.clientY - innerHeight/2) / 60;
     resetIdleTimer();
 });
 window.addEventListener('touchstart', resetIdleTimer);
 
-// Система умной автозагрузки
 function startSmartAutoLoad() {
     const nextToLoad = audioElements.find(el => !el.isLoaded && !el.btn.classList.contains('loading'));
     if (nextToLoad) {
         smartLoad(nextToLoad).then(() => {
-            // После успешной загрузки одного, планируем следующий через небольшую паузу
             idleTimer = setTimeout(startSmartAutoLoad, 200);
         });
     }
@@ -383,21 +380,37 @@ function toggleSleep() {
     updateUI();
 }
 
+// Усовершенствованная система воспроизведения
 function runRandom() { 
   if(!randomActive) return; 
+  
+  // Очищаем старый таймер перед созданием нового, чтобы не было наслоений
+  if (nextCycleTimeout) clearTimeout(nextCycleTimeout);
+
   let readySounds = audioElements.filter(el => el.isLoaded);
-  if (readySounds.length === 0) { nextCycleTimeout = setTimeout(runRandom, 1000); return; }
-  let count = Math.floor(Math.random() * 2) + 1;
-  let toPlay = readySounds.sort(() => 0.5 - Math.random()).slice(0, count);
-  const allMuted = toPlay.every(el => el.isMuted);
-  if(allMuted) {
-      const audiblePool = readySounds.filter(el => !el.isMuted);
-      if(audiblePool.length > 0) {
-          const extraSound = audiblePool[Math.floor(Math.random() * audiblePool.length)];
-          if(!toPlay.includes(extraSound)) toPlay.push(extraSound);
-      }
+
+  // Если звуки еще не готовы, проверяем каждую секунду (как ты и просил)
+  if (readySounds.length === 0) { 
+    nextCycleTimeout = setTimeout(runRandom, 1000); 
+    return; 
   }
-  audioElements.forEach(el => toPlay.includes(el) ? fadeIn(el) : fadeOut(el));
+
+  // Если звуки есть, выбираем 1-2 случайных
+  let count = Math.min(readySounds.length, Math.floor(Math.random() * 2) + 1);
+  let toPlay = [...readySounds].sort(() => 0.5 - Math.random()).slice(0, count);
+
+  // Убеждаемся, что выбранный сет не пустой (защита от пауз)
+  if (toPlay.length > 0) {
+      audioElements.forEach(el => {
+          if (toPlay.includes(el)) {
+              if (el.targetVol === 0) fadeIn(el);
+          } else {
+              if (el.targetVol > 0) fadeOut(el);
+          }
+      });
+  }
+
+  // Планируем следующий цикл
   nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000); 
 }
 
@@ -405,7 +418,10 @@ function setSpeed(v, key) {
     currentSpeedValue = v; currentSpeedKey = key;
     updateUI();
     document.getElementById('speedDropdown').classList.remove('open'); 
-    if(randomActive){ clearTimeout(nextCycleTimeout); runRandom(); } 
+    if(randomActive){ 
+        clearTimeout(nextCycleTimeout); 
+        runRandom(); 
+    } 
 }
 
 function updateUI(){
@@ -428,7 +444,17 @@ function updateUI(){
   audioElements.forEach((el, i) => el.btn.querySelector('span').innerText = sounds[i].name[langOrder[langIdx]]);
 }
 
-document.getElementById('randomBtn').onclick = () => { initAudioContext(); randomActive = !randomActive; if(randomActive) runRandom(); else { clearTimeout(nextCycleTimeout); audioElements.forEach(fadeOut); } updateUI(); };
+document.getElementById('randomBtn').onclick = () => { 
+    initAudioContext(); 
+    randomActive = !randomActive; 
+    if(randomActive) {
+        runRandom(); 
+    } else { 
+        if (nextCycleTimeout) clearTimeout(nextCycleTimeout);
+        audioElements.forEach(fadeOut); 
+    } 
+    updateUI(); 
+};
 document.getElementById('sleepBtn').onclick = toggleSleep;
 document.getElementById('repairBtn').onclick = () => location.reload();
 document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); document.getElementById('speedDropdown').classList.toggle('open'); };
@@ -436,7 +462,7 @@ document.querySelectorAll('.lang-switcher-btn').forEach(btn => { btn.onclick = (
 document.getElementById('closeWelcome').onclick = () => { 
     document.getElementById('welcomeModal').style.display='none'; 
     initAudioContext(); 
-    startSmartAutoLoad(); // Запуск системы автозагрузки при закрытии модалки
+    startSmartAutoLoad(); 
 };
 window.onclick = () => document.getElementById('speedDropdown').classList.remove('open');
 function showHelp() { document.getElementById('welcomeModal').style.display = 'flex'; }
