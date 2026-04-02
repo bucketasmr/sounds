@@ -17,24 +17,31 @@
   body.fancy-bg {
     background: radial-gradient(ellipse at bottom, #050505 0%, #0a0a1f 100%);
   }
+
   .overlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index:3; pointer-events: none; }
+  
   .container { 
     position: relative; z-index: 10; 
     display:flex; flex-direction: column; align-items:center; 
     padding:20px; height: 100vh; box-sizing: border-box; 
   }
+
   .title-bar { display:flex; align-items:center; gap:15px; margin-bottom:15px; z-index: 1000; }
   h1 { margin:0; font-size:26px; color:#ffb400; text-shadow:0 0 10px #ffb400; }
+  
   #helpBtn {
     background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3);
     width: 35px; height: 35px; border-radius: 50%; color: white; cursor: pointer;
     display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px);
     font-weight: bold; font-size: 18px;
   }
+
   .lang-btn-ui {
     background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.4);
     padding: 8px 16px; border-radius: 10px; color: white; cursor: pointer; font-weight: bold;
+    min-width: 45px;
   }
+
   .controls { margin-bottom:15px; display:flex; gap:10px; flex-wrap: wrap; justify-content: center; align-items: center; z-index: 10; }
   .controls > button { 
     padding:8px 14px; border:none; border-radius:12px; 
@@ -42,14 +49,18 @@
     font-weight:bold; backdrop-filter: blur(5px); font-size: 13px;
     transition: all 0.3s ease;
   }
+  
   #randomBtn { background: rgba(138, 43, 226, 0.4); border: 1px solid rgba(138, 43, 226, 0.5); min-width: 80px; }
   #repairBtn { background: rgba(255, 50, 50, 0.3); border: 1px solid rgba(255, 50, 50, 0.5); color: #ffcccc; }
+  
   #sleepBtn { background: rgba(100, 150, 255, 0.1); border: 1px solid rgba(100, 150, 255, 0.2); color: #aabbff; }
   #sleepBtn.active { background: rgba(40, 50, 100, 0.6); color: #ccddee; border-color: rgba(100, 150, 255, 0.4); box-shadow: 0 0 15px rgba(0,0,50,0.5); }
+
   .sound-grid {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr));
     gap: 15px; width: 100%; max-width: 600px; padding: 10px; overflow-y: auto; flex-grow: 1; z-index: 5;
   }
+
   .sound-button { 
     aspect-ratio: 1 / 1; border: none; border-radius: 20px; 
     background: rgba(255,255,255,0.05); color:rgba(255,255,255,0.2); font-weight:bold; 
@@ -58,13 +69,18 @@
     border: 1px solid rgba(255,255,255,0.05); position: relative; overflow: hidden;
     padding: 5px;
   }
+
   .sound-button::before {
     content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 0%;
     background: linear-gradient(to top, rgba(255, 180, 0, 0.3), transparent);
     transition: height 0.4s ease-out; z-index: -1;
   }
   .sound-button.loading::before { height: var(--load-percent, 10%); animation: loading-pulse 1.5s infinite; }
-  @keyframes loading-pulse { 0% { opacity: 0.4; } 50% { opacity: 0.8; } 100% { opacity: 0.4; } }
+  
+  @keyframes loading-pulse {
+    0% { opacity: 0.4; } 50% { opacity: 0.8; } 100% { opacity: 0.4; }
+  }
+
   .mute-btn {
     position: absolute; top: 5px; right: 5px; width: 22px; height: 22px;
     background: rgba(255,255,255,0.1); border-radius: 50%; display: none;
@@ -73,10 +89,12 @@
   }
   .sound-button.active .mute-btn { display: flex; }
   .mute-btn.muted { background: #ff5050; border-color: #ff5050; }
+
   .sound-button.loading { color: #ffb400; border-color: rgba(255, 180, 0, 0.3); }
   .sound-button.ready { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.1); }
   .sound-button.active { box-shadow: 0 0 20px rgba(255,255,255,0.2); color: white; }
   .sound-button.broken { border: 2px solid rgba(255, 50, 50, 0.6) !important; color: #ff5050; }
+
   .tile-vis {
     position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
     width: 30px; height: 4px; background: rgba(255,255,255,0.2);
@@ -84,6 +102,7 @@
   }
   .tile-vis-bar { height: 100%; width: 0%; background: #fff; border-radius: 2px; }
   .sound-button.active .tile-vis { display: block; }
+
   .custom-select-container { position: relative; }
   .select-trigger {
     padding: 8px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.2);
@@ -97,8 +116,10 @@
   }
   .custom-dropdown.open { display: flex; }
   .custom-dropdown button { padding: 12px; border: none; background: transparent; color: white; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: bold; }
+
   canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; transition: opacity 1.5s ease; }
   canvas.hidden { opacity: 0; }
+  
   .modal {
     display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(0,0,0,0.85); z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(8px);
@@ -148,9 +169,9 @@
     <div class="custom-select-container">
         <div class="select-trigger" id="speedTrigger">Fast</div>
         <div class="custom-dropdown" id="speedDropdown">
-            <button onclick="setSpeed(11, 'fast')" id="optFast">Fast</button>
-            <button onclick="setSpeed(24, 'medium')" id="optMed">Medium</button>
-            <button onclick="setSpeed(46, 'slow')" id="optSlow">Slow</button>
+            <button onclick="setSpeed(11, 'fast')">Fast</button>
+            <button onclick="setSpeed(24, 'medium')">Medium</button>
+            <button onclick="setSpeed(46, 'slow')">Slow</button>
         </div>
     </div>
   </div>
@@ -163,7 +184,7 @@ let audioCtx = null, globalAnalyser = null;
 let currentSpeedValue = 11, langIdx = 0, randomActive = false, nextCycleTimeout = null;
 let sleepMode = false, animationId = null;
 
-const langOrder = ['en', 'uk', 'ru', 'pt'];
+const langOrder = ['en', 'pt', 'uk', 'ru'];
 let audioElements = [], particles = [], steamParticles = [];
 
 let comet = null;
@@ -171,38 +192,123 @@ let supernova = null;
 let fogParticles = Array.from({length: 5}, () => ({ x: Math.random()*innerWidth, y: Math.random()*innerHeight, r: 150+Math.random()*100, opacity: 0.03 + Math.random()*0.05, vx: Math.random()*0.2 - 0.1 }));
 
 const sounds = [
-  { file: 'purplebrush.mp3', name: { en: 'Purple Brush', ru: 'Фиолетовая кисть', uk: 'Фіолетовий пензель', pt: 'Pincel Roxo' }, color: 'rgba(150,100,255,0.5)' },
-  { file: 'greybrush.mp3', name: { en: 'Grey Brush', ru: 'Серая кисть', uk: 'Сірий пензель', pt: 'Pincel Cinza' }, color: 'rgba(140,140,140,0.5)' },
-  { file: 'pinksoftbrush.mp3', name: { en: 'Soft Brush', ru: 'Мягкая кисть', uk: 'М’який пензель', pt: 'Pincel Macio' }, color: 'rgba(255,182,193,0.5)' },
-  { file: 'strawberry.mp3', name: { en: 'Strawberry', ru: 'Клубника', uk: 'Полуниця', pt: 'Morango' }, color: 'rgba(255,105,180,0.5)' },
-  { file: 'wax.mp3', name: { en: 'Wax', ru: 'Воск', uk: 'Віск', pt: 'Cera' }, color: 'rgba(255,165,0,0.5)' },
-  { file: 'carrot.mp3', name: { en: 'Carrot', ru: 'Морковь', uk: 'Морква', pt: 'Cenoura' }, color: 'rgba(255,140,0,0.5)' },
-  { file: 'choko.mp3', name: { en: 'Choco', ru: 'Шоколад', uk: 'Шоколад', pt: 'Chocolate' }, color: 'rgba(139,69,19,0.5)' },
-  { file: 'wood.mp3', name: { en: 'Wood', ru: 'Дерево', uk: 'Дерево', pt: 'Madeira' }, color: 'rgba(255,255,0,0.5)' },
-  { file: 'oldphone.mp3', name: { en: 'Old Phone', ru: 'Телефон', uk: 'Телефон', pt: 'Telefone Velho' }, color: 'rgba(50,50,50,0.5)' }
+  {
+    "file": "purplebrush.mp3",
+    "name": {
+      "en": "Purple Brush",
+      "pt": "Pincel Roxo",
+      "ru": "Фиолетовая кисть",
+      "uk": "Фіолетовий пензель"
+    },
+    "color": "rgba(150,100,255,0.5)"
+  },
+  {
+    "file": "greybrush.mp3",
+    "name": {
+      "en": "Grey Brush",
+      "pt": "Pincel Cinza",
+      "ru": "Серая кисть",
+      "uk": "Сірий пензель"
+    },
+    "color": "rgba(140,140,140,0.5)"
+  },
+  {
+    "file": "pinksoftbrush.mp3",
+    "name": {
+      "en": "Soft Brush",
+      "pt": "Pincel Macio",
+      "ru": "Мягкая кисть",
+      "uk": "М’який пензель"
+    },
+    "color": "rgba(255,182,193,0.5)"
+  },
+  {
+    "file": "strawberry.mp3",
+    "name": {
+      "en": "Strawberry",
+      "pt": "Morango",
+      "ru": "Клубника",
+      "uk": "Полуниця"
+    },
+    "color": "rgba(255,105,180,0.5)"
+  },
+  {
+    "file": "wax.mp3",
+    "name": {
+      "en": "Wax",
+      "pt": "Cera",
+      "ru": "Воск",
+      "uk": "Віск"
+    },
+    "color": "rgba(255,165,0,0.5)"
+  },
+  {
+    "file": "carrot.mp3",
+    "name": {
+      "en": "Carrot",
+      "pt": "Cenoura",
+      "ru": "Морковь",
+      "uk": "Морква"
+    },
+    "color": "rgba(255,140,0,0.5)"
+  },
+  {
+    "file": "choko.mp3",
+    "name": {
+      "en": "Choco",
+      "pt": "Chocolate",
+      "ru": "Шоколад",
+      "uk": "Шоколад"
+    },
+    "color": "rgba(139,69,19,0.5)"
+  },
+  {
+    "file": "wood.mp3",
+    "name": {
+      "en": "Wood",
+      "pt": "Madeira",
+      "ru": "Дерево",
+      "uk": "Дерево"
+    },
+    "color": "rgba(255,255,0,0.5)"
+  },
+  {
+    "file": "oldphone.mp3",
+    "name": {
+      "en": "Old Phone",
+      "pt": "Telefone Antigo",
+      "ru": "Телефон",
+      "uk": "Телефон"
+    },
+    "color": "rgba(50,50,50,0.5)"
+  }
 ];
 
 const uiTL = {
   en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", welcome: "Press OK and Play to activate sounds.", repairHint: "Press REPAIR if sounds fail to load.", sleep: "Sleep", speeds: { slow: "Slow", medium: "Medium", fast: "Fast" } },
+  pt: { code: "PT", title: "BALDE ASMR", play: "Tocar", pause: "Pausa", repair: "REPARAR", welcome: "Pressione OK e Tocar para ativar os sons.", repairHint: "Pressione REPARAR se os sons não carregarem.", sleep: "Dormir", speeds: { slow: "Lento", medium: "Médio", fast: "Rápido" } },
   ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", welcome: "Нажмите OK и Играть для активации звуков.", repairHint: "Нажмите ЧИНИТЬ, если звуки не загрузились.", sleep: "Сон", speeds: { slow: "Медленно", medium: "Средне", fast: "Быстро" } },
-  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть OK та Грати для активації звуків.", repairHint: "Натисніть ЛАГОДИТИ, якщо звуки не завантажились.", sleep: "Сон", speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } },
-  pt: { code: "PT", title: "BALDE ASMR", play: "Tocar", pause: "Pausa", repair: "REPARAR", welcome: "Pressione OK e Tocar para ativar os sons.", repairHint: "Pressione REPARAR se os sons não carregarem.", sleep: "Dormir", speeds: { slow: "Lento", medium: "Médio", fast: "Rápido" } }
+  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", welcome: "Натисніть OK та Грати для активації звуків.", repairHint: "Натисніть ЛАГОДИТИ, якщо звуки не завантажились.", sleep: "Сон", speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } }
 };
 
 async function smartLoad(state) {
     if (state.isLoaded) return;
     state.btn.classList.add('loading');
     state.btn.style.setProperty('--load-percent', '15%');
+    
     const url = `https://raw.githubusercontent.com/bucketasmr/sounds/main/${state.fileName}?v=${Math.random().toString(36).substring(7)}`;
+    
     try {
         state.audio.src = url;
         state.audio.load();
+
         state.audio.onprogress = () => {
             if (state.audio.buffered.length > 0) {
                 const percent = (state.audio.buffered.end(0) / state.audio.duration) * 100;
                 state.btn.style.setProperty('--load-percent', `${Math.max(15, percent)}%`);
             }
         };
+
         const success = await new Promise((resolve) => {
             state.audio.oncanplaythrough = () => {
                 state.btn.style.setProperty('--load-percent', '100%');
@@ -216,6 +322,7 @@ async function smartLoad(state) {
             state.audio.onerror = () => resolve(false);
             setTimeout(() => resolve(false), 15000);
         });
+
         if (!success) handleLoadError(state);
     } catch (e) { handleLoadError(state); }
 }
@@ -335,12 +442,14 @@ function animate(){
     sCtx.clearRect(0,0,innerWidth,innerHeight);
     starsArr.forEach(s=>{ s.a+=s.t; if(s.a>1||s.a<0.1) s.t*=-1; sCtx.beginPath(); sCtx.arc(s.x,s.y,s.r,0,Math.PI*2); sCtx.fillStyle=`rgba(255,255,255,${Math.abs(s.a)})`; sCtx.fill(); });
     vCtx.clearRect(0,0,innerWidth,innerHeight);
+
     fogParticles.forEach(f => {
         f.x += f.vx; if (f.x > innerWidth + f.r) f.x = -f.r; if (f.x < -f.r) f.x = innerWidth + f.r;
         let g = vCtx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.r);
         g.addColorStop(0, `rgba(255, 255, 255, ${f.opacity})`); g.addColorStop(1, 'rgba(255, 255, 255, 0)');
         vCtx.fillStyle = g; vCtx.fillRect(f.x - f.r, f.y - f.r, f.r * 2, f.r * 2);
     });
+
     if (comet) {
         vCtx.beginPath(); 
         let g = vCtx.createLinearGradient(comet.x, comet.y, comet.x - (comet.vx * 10), comet.y - (comet.vy * 10));
@@ -353,6 +462,7 @@ function animate(){
         comet.x += comet.vx; comet.y += comet.vy;
         if (comet.x > innerWidth + 500 || comet.x < -500 || comet.y > innerHeight + 500 || comet.y < -500) comet = null;
     }
+
     if (supernova) {
         vCtx.beginPath(); let g = vCtx.createRadialGradient(supernova.x, supernova.y, 0, supernova.x, supernova.y, supernova.r);
         g.addColorStop(0, `rgba(255, 255, 255, ${supernova.opacity})`); g.addColorStop(0.2, `rgba(255, 200, 50, ${supernova.opacity*0.5})`); g.addColorStop(1, 'rgba(255, 255, 255, 0)');
@@ -361,17 +471,20 @@ function animate(){
         else { supernova.r += 0.2; supernova.opacity -= 0.01; if (supernova.opacity <= 0) supernova = null; }
     }
   }
+
   audioElements.forEach(el => {
     if(el.analyser && el.btn.classList.contains('active')) {
         el.analyser.getByteFrequencyData(el.tileDataArray);
         let vol = 0; for(let i=0; i<el.tileDataArray.length; i++) vol += el.tileDataArray[i];
         vol /= el.tileDataArray.length;
+        
         if (sleepMode) {
           el.visBar.style.width = '0%';
           el.btn.style.backgroundColor = 'rgba(255,255,255,0.2)';
         } else {
           el.visBar.style.width = `${Math.min(100, (vol/150)*100)}%`;
           el.btn.style.backgroundColor = el.color.replace('0.5', (0.15 + (vol/255)*0.6).toFixed(2));
+          
           if(Math.random() < 0.08) {
               steamParticles.push({ x: Math.random() * innerWidth, y: innerHeight + 50, r: 40 + Math.random() * 60, opacity: 0.15 + (vol / 255) * 0.2, speed: 0.3 + Math.random() * 0.5, drift: Math.random() * 0.4 - 0.2, color: el.color });
           }
@@ -385,6 +498,7 @@ function animate(){
         el.btn.style.setProperty('--load-percent', '0%');
     }
   });
+
   if (!sleepMode) {
     for (let i = steamParticles.length - 1; i >= 0; i--) {
       const s = steamParticles[i]; s.y -= s.speed; s.x += Math.sin(s.y * 0.01) * s.drift; s.opacity -= 0.0005;
@@ -394,6 +508,7 @@ function animate(){
       vCtx.fillStyle = grad; vCtx.beginPath(); vCtx.arc(s.x, s.y, s.r, 0, Math.PI * 2); vCtx.fill();
       if(s.opacity <= 0 || s.y < -s.r) steamParticles.splice(i, 1);
     }
+
     for (let i = particles.length - 1; i >= 0; i--) {
       const p = particles[i]; p.y -= p.s; p.al -= 0.001;
       vCtx.beginPath(); vCtx.arc(p.x, p.y, p.r, 0, Math.PI*2);
@@ -409,6 +524,7 @@ function toggleSleep() {
     sleepMode = !sleepMode;
     const btn = document.getElementById('sleepBtn');
     const canvases = [document.getElementById('stars'), document.getElementById('vis')];
+    
     if (sleepMode) {
         canvases.forEach(c => c.classList.add('hidden'));
         document.body.classList.remove('fancy-bg');
@@ -451,7 +567,7 @@ function setSpeed(v, key) {
 document.getElementById('sleepBtn').onclick = toggleSleep;
 document.getElementById('speedTrigger').onclick = (e) => { e.stopPropagation(); document.getElementById('speedDropdown').classList.toggle('open'); };
 document.querySelectorAll('.lang-switcher-btn').forEach(btn => {
-    btn.onclick = (e) => { e.stopPropagation(); langIdx = (langIdx + 1) % langOrder.length; updateUI(); };
+    btn.onclick = (e) => { e.stopPropagation(); langIdx = (langIdx + 1) % 4; updateUI(); };
 });
 document.getElementById('randomBtn').onclick = () => { initAudioContext(); randomActive = !randomActive; if(randomActive) runRandom(); else { clearTimeout(nextCycleTimeout); audioElements.forEach(fadeOut); } updateUI(); };
 document.getElementById('repairBtn').onclick = () => location.reload();
@@ -471,9 +587,8 @@ function updateUI(){
   document.getElementById('speedTrigger').innerText=t.speeds[currentSpeedKey];
   document.getElementById('sleepBtn').innerText = `${t.sleep}: ${sleepMode ? 'ON' : 'OFF'}`;
   document.getElementById('sleepBtn').classList.toggle('active', sleepMode);
-  document.getElementById('optFast').innerText = t.speeds.fast;
-  document.getElementById('optMed').innerText = t.speeds.medium;
-  document.getElementById('optSlow').innerText = t.speeds.slow;
+  const speedBtns = document.querySelectorAll('#speedDropdown button');
+  speedBtns[0].innerText = t.speeds.fast; speedBtns[1].innerText = t.speeds.medium; speedBtns[2].innerText = t.speeds.slow;
   audioElements.forEach((el,i)=>el.btn.querySelector('span').innerText=sounds[i].name[langOrder[langIdx]]);
 }
 window.onclick=()=>document.getElementById('speedDropdown').classList.remove('open');
