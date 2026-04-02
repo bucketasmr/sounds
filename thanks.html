@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Welcome to Premium - BUCKET ASMR</title>
+<style>
+  body, html {
+    margin: 0; padding: 0; height: 100%;
+    background: radial-gradient(ellipse at bottom, #0a0a2e 0%, #050505 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: white;
+    overflow: hidden; display: flex; justify-content: center; align-items: center;
+  }
+
+  canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; z-index: 1; }
+  
+  .thank-you-card {
+    position: relative; z-index: 10;
+    background: rgba(20, 20, 35, 0.8);
+    backdrop-filter: blur(20px);
+    border: 1px solid #ffb400;
+    padding: 40px 30px;
+    border-radius: 40px;
+    text-align: center;
+    max-width: 85%;
+    box-shadow: 0 0 50px rgba(255, 180, 0, 0.2);
+    animation: fadeIn 1.2s ease-out;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .icon { font-size: 60px; margin-bottom: 20px; display: block; }
+  
+  h1 { 
+    margin: 0; font-size: 26px; color: #ffb400; 
+    text-shadow: 0 0 15px rgba(255, 180, 0, 0.5);
+    letter-spacing: 1px;
+    line-height: 1.2;
+  }
+
+  p { font-size: 15px; color: #ccc; line-height: 1.6; margin: 20px 0 30px 0; }
+
+  .back-btn {
+    display: inline-block;
+    background: linear-gradient(45deg, #ffb400, #ff8c00);
+    color: black;
+    padding: 16px 32px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 14px;
+    text-transform: uppercase;
+    box-shadow: 0 5px 20px rgba(255, 180, 0, 0.4);
+    transition: transform 0.2s;
+  }
+
+  .back-btn:active { transform: scale(0.95); }
+
+  .heart { color: #ff424d; display: inline-block; animation: pulse 1.5s infinite; }
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="stars"></canvas>
+
+<div class="thank-you-card">
+  <span class="icon">✨</span>
+  <h1 id="title">Welcome to Premium!</h1>
+  <p id="message">
+    Thank you for supporting the project! Now you have access to all exclusive sounds and features without limits. <br><br>
+    We wish you a pleasant listening experience and a <b>great rest</b>! <span class="heart">❤</span>
+  </p>
+  
+  <a href="index.html" id="btnText" class="back-btn">Start Session</a>
+</div>
+
+<script>
+  // Логика мультиязычности
+  const translations = {
+    en: {
+      title: "Welcome to Premium!",
+      message: "Thank you for supporting the project! Now you have access to all exclusive sounds and features without limits. <br><br>We wish you a pleasant listening experience and a <b>great rest</b>!",
+      btn: "Start Session"
+    },
+    pt: {
+      title: "Bem-vindo ao Premium!",
+      message: "Obrigado por apoiar o projeto! Agora você tem acesso a todos os sons e recursos exclusivos sem limites. <br><br>Desejamos-lhe uma experiência agradável e um <b>ótimo descanso</b>!",
+      btn: "Iniciar Sessão"
+    },
+    uk: {
+      title: "Ласкаво просимо до Premium!",
+      message: "Дякуємо за підтримку проєкту! Тепер вам доступні всі ексклюзивні звуки та функції без обмежень. <br><br>Бажаємо вам приємного прослуховування та <b>чудового відпочинку</b>!",
+      btn: "Почати сеанс"
+    },
+    ru: {
+      title: "Добро пожаловать в Premium!",
+      message: "Спасибо за поддержку проекта! Теперь вам доступны все эксклюзивные звуки и функции без ограничений. <br><br>Желаем вам приятного прослушивания и <b>отличного отдыха</b>!",
+      btn: "Начать сеанс"
+    }
+  };
+
+  function applyLanguage() {
+    const userLang = navigator.language || navigator.userLanguage; 
+    let lang = 'en'; // По умолчанию английский
+
+    if (userLang.startsWith('ru')) lang = 'ru';
+    else if (userLang.startsWith('uk')) lang = 'uk';
+    else if (userLang.startsWith('pt')) lang = 'pt';
+
+    const t = translations[lang];
+    document.getElementById('title').innerText = t.title;
+    document.getElementById('message').innerHTML = t.message;
+    document.getElementById('btnText').innerText = t.btn;
+    document.title = t.title + " - BUCKET ASMR";
+  }
+
+  // Звездное небо
+  const canvas = document.getElementById('stars');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  window.onresize = resize;
+  resize();
+
+  class Star {
+    constructor() {
+      this.x = Math.random() * canvas.width;
+      this.y = Math.random() * canvas.height;
+      this.size = Math.random() * 1.5;
+      this.blink = Math.random() * 0.05;
+      this.alpha = Math.random();
+    }
+    draw() {
+      this.alpha += this.blink;
+      if (this.alpha > 1 || this.alpha < 0) this.blink *= -1;
+      ctx.fillStyle = `rgba(255, 255, 255, ${Math.abs(this.alpha)})`;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  for (let i = 0; i < 60; i++) stars.push(new Star());
+
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(s => s.draw());
+    requestAnimationFrame(animate);
+  }
+
+  applyLanguage();
+  animate();
+</script>
+
+</body>
+</html>
