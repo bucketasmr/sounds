@@ -7,7 +7,7 @@
 <meta name="color-scheme" content="dark">
 <title>BUCKET ASMR Premium</title>
 <style>
-  /* Твои оригинальные стили */
+  /* Стили экрана блокировки */
   #pass-screen {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: radial-gradient(circle at center, #1a1a2e 0%, #050505 100%);
@@ -29,6 +29,7 @@
   .pass-btn { background: #ffb400; color: black; border: none; padding: 12px 25px; border-radius: 12px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
   .error-msg { color: #ff5050; font-size: 13px; margin-top: 10px; display: none; }
 
+  /* Основные стили */
   body, html {
     margin: 0; padding: 0; height: 100%;
     background: #050505; transition: background 3s ease;
@@ -41,25 +42,12 @@
   .title-bar { display:flex; align-items:center; gap:15px; margin-bottom:15px; z-index: 1000; }
   h1 { margin:0; font-size:24px; color:#ffb400; text-shadow:0 0 10px #ffb400; }
   
-  /* Стиль счетчика LIVE */
   .live-counter {
-    background: rgba(255, 50, 50, 0.15);
-    border: 1px solid rgba(255, 50, 50, 0.4);
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: bold;
-    color: #ff8080;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    background: rgba(255, 50, 50, 0.15); border: 1px solid rgba(255, 50, 50, 0.4);
+    padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; color: #ff8080;
+    display: flex; align-items: center; gap: 5px; text-transform: uppercase; letter-spacing: 1px;
   }
-  .live-dot {
-    width: 6px; height: 6px; background: #ff3030; border-radius: 50%;
-    box-shadow: 0 0 8px #ff3030; animation: blink 1.5s infinite;
-  }
+  .live-dot { width: 6px; height: 6px; background: #ff3030; border-radius: 50%; box-shadow: 0 0 8px #ff3030; animation: blink 1.5s infinite; }
   @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
 
   #helpBtn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); width: 35px; height: 35px; border-radius: 50%; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); font-weight: bold; font-size: 18px; }
@@ -77,6 +65,7 @@
   .sound-button::before { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 0%; background: linear-gradient(to top, rgba(255, 180, 0, 0.3), transparent); transition: height 0.4s ease-out; z-index: -1; }
   .mute-btn { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; background: rgba(255,255,255,0.1); border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 10px; color: white; z-index: 20; border: 1px solid rgba(255,255,255,0.2); }
   .sound-button.active .mute-btn { display: flex; }
+  .mute-btn.muted { background: #ff5050; border-color: #ff5050; }
   .sound-button.ready { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.1); }
   .sound-button.active { box-shadow: 0 0 20px rgba(255,255,255,0.2); color: white; }
   .sound-button.broken { border: 2px solid rgba(255, 50, 50, 0.6) !important; color: #ff5050; }
@@ -179,7 +168,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
 <script>
-// --- КОНФИГУРАЦИЯ FIREBASE ---
+// --- FIREBASE CONFIG ---
 const firebaseConfig = {
   apiKey: "AIzaSyAhDzJnUnVFQRlojHZaWp00IgrPsfbmkKo",
   authDomain: "bucket-asmr-premium.firebaseapp.com",
@@ -188,7 +177,7 @@ const firebaseConfig = {
   messagingSenderId: "977463565728",
   appId: "1:977463565728:web:a35a91ce071d1f0d2a98c5",
   measurementId: "G-CP73XKC8KY",
-  databaseURL: "https://bucket-asmr-premium-default-rtdb.firebaseio.com" // Убедись, что этот URL совпадает с твоим в Firebase Console
+  databaseURL: "https://bucket-asmr-premium-default-rtdb.firebaseio.com"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -196,20 +185,16 @@ const db = firebase.database();
 const connectionsRef = db.ref('online_users');
 const countElement = document.getElementById('online-count');
 
-// Логика счетчика
 const myConnectionRef = connectionsRef.push();
-// При дисконнекте удаляем себя
 myConnectionRef.onDisconnect().remove();
-// Записываем, что мы в сети
 myConnectionRef.set(true);
 
-// Слушаем изменения общего количества
 connectionsRef.on('value', (snap) => {
   const count = snap.numChildren();
   countElement.innerText = count || 1;
 });
 
-// --- ЛОГИКА ПАРОЛЯ ---
+// --- PASSWORD & HISTORY LOCK ---
 function checkPass() {
   const input = document.getElementById('pass-input').value;
   const error = document.getElementById('error-msg');
@@ -217,6 +202,11 @@ function checkPass() {
     document.getElementById('pass-screen').classList.add('hidden');
     document.getElementById('welcomeModal').style.display = 'flex';
     initAudioContext();
+    // Активируем ловушку истории сразу после входа
+    window.history.pushState(null, null, window.location.href);
+    window.onpopstate = function() {
+        window.history.pushState(null, null, window.location.href);
+    };
   } else {
     error.style.display = 'block';
     document.getElementById('pass-input').value = '';
@@ -232,7 +222,7 @@ function switchTab(event, tabId) {
     event.currentTarget.classList.add('active');
 }
 
-// --- ОСНОВНАЯ ЛОГИКА АУДИО ---
+// --- AUDIO LOGIC ---
 let audioCtx = null, globalAnalyser = null;
 let currentSpeedValue = 11, langIdx = 0, randomActive = false, nextCycleTimeout = null;
 let sleepMode = false, animationId = null, wakeLock = null;
@@ -282,9 +272,7 @@ async function smartLoad(state) {
 }
 
 function handleLoadError(state) {
-    state.isLoaded = false;
-    state.btn.classList.remove('loading');
-    state.btn.classList.add('broken');
+    state.isLoaded = false; state.btn.classList.remove('loading'); state.btn.classList.add('broken');
 }
 
 function initAudioContext() {
@@ -310,6 +298,7 @@ sounds.forEach((s) => {
   state.muteBtn.onclick = (e) => {
     e.stopPropagation();
     state.isMuted = !state.isMuted;
+    state.muteBtn.classList.toggle('muted', state.isMuted);
     state.muteBtn.innerText = state.isMuted ? '🔇' : '🔊';
     if (state.gainNode) state.gainNode.gain.setTargetAtTime(state.isMuted ? 0 : 0.6, audioCtx.currentTime, 0.2);
   };
@@ -345,6 +334,7 @@ function fadeOut(el) {
   setTimeout(() => { if(el.targetVol === 0) el.audio.pause(); }, 1000);
 }
 
+// --- VISUALS ---
 const sCan = document.getElementById('stars'), sCtx = sCan.getContext('2d');
 const vCan = document.getElementById('vis'), vCtx = vCan.getContext('2d');
 function res() { sCan.width = vCan.width = innerWidth; sCan.height = vCan.height = innerHeight; }
@@ -390,19 +380,31 @@ requestAnimationFrame(animate);
 
 function toggleSleep() {
     sleepMode = !sleepMode;
-    const btn = document.getElementById('sleepBtn');
     if (sleepMode) { document.getElementById('stars').classList.add('hidden'); document.getElementById('vis').classList.add('hidden'); document.body.classList.remove('fancy-bg'); document.body.style.background = '#000'; particles = []; } 
     else { document.getElementById('stars').classList.remove('hidden'); document.getElementById('vis').classList.remove('hidden'); document.body.classList.add('fancy-bg'); }
     updateUI();
 }
 
+// --- ОБНОВЛЕННЫЙ РАНДОМАЙЗЕР (АНТИ-ТИШИНА) ---
 function runRandom() { 
   if(!randomActive) return; 
+  
   let readySounds = audioElements.filter(el => el.isLoaded);
   if (readySounds.length === 0) { nextCycleTimeout = setTimeout(runRandom, 1000); return; }
-  let count = Math.min(readySounds.length, Math.floor(Math.random() * 4) + 1);
-  let toPlay = readySounds.sort(() => 0.5 - Math.random()).slice(0, count);
+
+  // 1. Фильтруем те, у кого НЕ нажат MUTE
+  let audibleSounds = readySounds.filter(el => !el.isMuted);
+  
+  // 2. Если все звуки замучены - используем все доступные, чтобы не было тишины
+  let pool = audibleSounds.length > 0 ? audibleSounds : readySounds;
+
+  // 3. Выбираем количество звуков
+  let count = Math.min(pool.length, Math.floor(Math.random() * 3) + 1);
+  let toPlay = pool.sort(() => 0.5 - Math.random()).slice(0, count);
+
+  // 4. Применяем
   audioElements.forEach(el => toPlay.includes(el) ? fadeIn(el) : fadeOut(el));
+
   nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000); 
 }
 
@@ -449,3 +451,4 @@ window.onclick = () => document.getElementById('speedDropdown').classList.remove
 updateUI();
 </script>
 </body>
+</html>
