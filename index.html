@@ -185,35 +185,51 @@ const db = firebase.database();
 const connectionsRef = db.ref('online_users');
 const countElement = document.getElementById('online-count');
 
-// Переменные для управления сетью
 let myConnectionRef = null;
+let counterInterval = null;
 
-// Функция управления онлайном (для экономии заряда)
+// ФУНКЦИЯ ОБНОВЛЕНИЯ ЧИСЛА (разовая проверка)
+async function fetchOnlineCount() {
+    try {
+        const snapshot = await connectionsRef.once('value');
+        countElement.innerText = snapshot.numChildren() || 1;
+    } catch (e) {
+        console.log("Firebase fetch error");
+    }
+}
+
+// УПРАВЛЕНИЕ СЕТЬЮ (Оптимизировано под интервалы)
 function toggleFirebaseNetwork(isActive) {
     if (isActive) {
-        // Подключаемся
+        // 1. Создаем наше присутствие (один раз)
         if (!myConnectionRef) {
             myConnectionRef = connectionsRef.push();
             myConnectionRef.onDisconnect().remove();
             myConnectionRef.set(true);
-            
-            // Слушаем изменения только если не в режиме сна
-            connectionsRef.on('value', (snap) => {
-                countElement.innerText = snap.numChildren() || 1;
-            });
+        }
+        
+        // 2. Делаем первый замер сразу
+        fetchOnlineCount();
+        
+        // 3. Ставим интервал на обновление раз в 60 секунд (Экономия батареи!)
+        if (!counterInterval) {
+            counterInterval = setInterval(fetchOnlineCount, 60000); 
         }
     } else {
-        // Отключаемся полностью
-        if (myConnectionRef) {
-            connectionsRef.off('value'); // Перестаем слушать обновления
-            myConnectionRef.remove();    // Удаляем себя из списка
-            myConnectionRef = null;
-            countElement.innerText = "—";
+        // ПОЛНОЕ ОТКЛЮЧЕНИЕ для режима Sleep
+        if (counterInterval) {
+            clearInterval(counterInterval);
+            counterInterval = null;
         }
+        if (myConnectionRef) {
+            myConnectionRef.remove();
+            myConnectionRef = null;
+        }
+        countElement.innerText = "—";
     }
 }
 
-// Запускаем сеть при старте (пока не в режиме сна)
+// Старт при загрузке
 toggleFirebaseNetwork(true);
 
 // --- PASSWORD & HISTORY LOCK ---
@@ -407,19 +423,17 @@ function toggleSleep() {
         document.body.classList.remove('fancy-bg'); 
         document.body.style.background = '#000'; 
         particles = []; 
-        // ВАЖНО: Выключаем сеть
-        toggleFirebaseNetwork(false);
+        toggleFirebaseNetwork(false); // Выключаем сеть полностью
     } else { 
         document.getElementById('stars').classList.remove('hidden'); 
         document.getElementById('vis').classList.remove('hidden'); 
         document.body.classList.add('fancy-bg'); 
-        // ВАЖНО: Включаем сеть
-        toggleFirebaseNetwork(true);
+        toggleFirebaseNetwork(true); // Включаем сеть
     }
     updateUI();
 }
 
-// --- ОБНОВЛЕННЫЙ РАНДОМАЙЗЕР ---
+// --- РАНДОМАЙЗЕР ---
 function runRandom() { 
   if(!randomActive) return; 
   
