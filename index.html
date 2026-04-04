@@ -33,7 +33,7 @@
   /* Основной интерфейс */
   body, html {
     margin: 0; padding: 0; height: 100%;
-    background: #050505; transition: background 3s ease;
+    background: #050505; transition: background 1s ease;
     font-family: 'Segoe UI', sans-serif; color: white; overflow: hidden;
     touch-action: manipulation; -webkit-user-select: none; user-select: none;
   }
@@ -41,7 +41,7 @@
   .overlay { position: absolute; top:0; left:0; right:0; bottom:0; background: rgba(0,0,0,0.4); z-index:3; pointer-events: none; }
   .container { position: relative; z-index: 10; display:flex; flex-direction: column; align-items:center; padding:20px; height: 100vh; box-sizing: border-box; }
   
-  .title-bar { display:flex; align-items:center; gap:15px; margin-bottom:15px; z-index: 1000; }
+  .title-bar { display:flex; align-items:center; gap:15px; margin-bottom:15px; z-index: 1000; transition: opacity 0.5s; }
   h1 { margin:0; font-size:24px; color:#ffb400; text-shadow:0 0 10px #ffb400; }
   
   .live-counter {
@@ -55,17 +55,19 @@
   #helpBtn { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); width: 35px; height: 35px; border-radius: 50%; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); font-weight: bold; font-size: 18px; }
   .lang-btn-ui { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.4); padding: 8px 16px; border-radius: 10px; color: white; cursor: pointer; font-weight: bold; min-width: 45px; }
 
-  .controls { margin-bottom:15px; display:flex; gap:10px; flex-wrap: wrap; justify-content: center; align-items: center; z-index: 10; }
+  .controls { margin-bottom:15px; display:flex; gap:10px; flex-wrap: wrap; justify-content: center; align-items: center; z-index: 10; transition: opacity 0.5s; }
   .controls > button { padding:8px 14px; border:none; border-radius:12px; background: rgba(255,255,255,0.15); color:white; cursor:pointer; font-weight:bold; backdrop-filter: blur(5px); font-size: 13px; transition: 0.3s; }
   
   #randomBtn { background: rgba(138, 43, 226, 0.4); border: 1px solid rgba(138, 43, 226, 0.3); min-width: 80px; }
-  #sleepBtn.active { background: #1a1a1a; border: 1px solid #333; color: #666; }
+  #sleepBtn.active { background: #ffb400; border: 1px solid #ffb400; color: black; box-shadow: 0 0 15px rgba(255, 180, 0, 0.4); }
 
   .sound-grid { 
     display: grid; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); 
     gap: 15px; width: 100%; max-width: 600px; padding: 10px; 
-    overflow-y: auto; flex-grow: 1; z-index: 5; 
+    overflow-y: auto; flex-grow: 1; z-index: 5; transition: opacity 0.5s, visibility 0.5s;
   }
+  .sound-grid.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
   .sound-button { 
     aspect-ratio: 1/1; border: 1px solid rgba(255,255,255,0.05); border-radius: 20px; 
     background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); 
@@ -87,7 +89,7 @@
   .custom-dropdown.open { display: flex; }
   .custom-dropdown button { padding: 12px; border: none; background: transparent; color: white; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.1); font-weight: bold; }
 
-  canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; }
+  canvas { position: fixed; top:0; left:0; width:100%; height:100%; pointer-events: none; transition: opacity 2s; }
   
   .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 10001; justify-content: center; align-items: center; backdrop-filter: blur(12px); }
   .modal-content { background: linear-gradient(145deg, #141423, #0a0a0f); border: 1px solid #ffb400; padding: 25px; border-radius: 30px; text-align: left; color: white; max-width: 85%; width: 400px; max-height: 85vh; overflow-y: auto; box-shadow: 0 0 40px rgba(255, 180, 0, 0.2); position: relative; }
@@ -127,7 +129,7 @@
         <button class="lang-btn-ui lang-switcher-btn" style="scale: 0.8;">EN</button>
     </div>
     <div class="modal-tabs">
-        <button class="tab-btn active" onclick="switchTab(event, 'tab-features')" id="tabTitleFeatures">Functions</button>
+        <button class="tab-btn active" onclick="switchTab(event, 'tab-features')" id="tabTitleFeatures">Advantages</button>
         <button class="tab-btn" onclick="switchTab(event, 'tab-guide')" id="tabTitleGuide">Guide</button>
     </div>
     <div id="tab-features" class="help-section active">
@@ -141,7 +143,7 @@
 </div>
 
 <div class="container">
-  <div class="title-bar">
+  <div class="title-bar" id="uiTitleBar">
     <h1 id="title">BUCKET ASMR</h1>
     <div class="live-counter">
       <div class="live-dot"></div>
@@ -151,7 +153,7 @@
     <button id="langBtn" class="lang-btn-ui lang-switcher-btn">EN</button>
   </div>
 
-  <div class="controls">
+  <div class="controls" id="uiControls">
     <button id="randomBtn">Play</button>
     <button id="sleepBtn">Sleep: OFF</button>
     <button id="repairBtn">REPAIR</button>
@@ -183,27 +185,18 @@ firebase.initializeApp(firebaseConfig);
 const connectionsRef = firebase.database().ref('online_users');
 let presenceRef = null, liveInterval = null;
 
-// --- WAKE LOCK (ЗАПРЕТ БЛОКИРОВКИ ЭКРАНА) ---
+// --- WAKE LOCK ---
 let wakeLock = null;
 async function requestWakeLock() {
   try {
     if ('wakeLock' in navigator) {
       wakeLock = await navigator.wakeLock.request('screen');
-      console.log('Wake Lock is active');
-      wakeLock.addEventListener('release', () => {
-        console.log('Wake Lock released');
-      });
     }
-  } catch (err) {
-    console.error(`${err.name}, ${err.message}`);
-  }
+  } catch (err) {}
 }
 
-// Переподключение замка при возвращении во вкладку
 document.addEventListener('visibilitychange', async () => {
-  if (wakeLock !== null && document.visibilityState === 'visible') {
-    await requestWakeLock();
-  }
+  if (wakeLock !== null && document.visibilityState === 'visible') { await requestWakeLock(); }
 });
 
 function updateConnections() {
@@ -234,10 +227,82 @@ const sounds = [
 ];
 
 const uiTL = {
-  en: { code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", sleep: "Sleep", tabFeatures: "Functions", tabGuide: "Guide", features: ["<span>✦</span> <b>Full Library:</b> All premium sounds unlocked.", "<span>✦</span> <b>Stay Awake:</b> Screen won't turn off automatically.", "<span>✦</span> <b>Mixer:</b> Play multiple sounds at the same time.", "<span>✦</span> <b>Randomizer:</b> Automatic sound switching.", "<span>✦</span> <b>Sleep Mode:</b> Zero light for deep relaxation."], guide: ["<b>1. Manual:</b> Click icons to start/stop sounds.", "<b>2. Multi:</b> Tap multiple icons to create your own mix.", "<b>3. Auto:</b> Press <b>PLAY</b> for random switching.", "<b>4. Speed:</b> Use the speed menu to change rhythm."], speeds: { slow: "Slow", medium: "Medium", fast: "Fast" } },
-  pt: { code: "PT", title: "BALDE ASMR", play: "Tocar", pause: "Pausa", repair: "REPARAR", sleep: "Dormir", tabFeatures: "Funções", tabGuide: "Guia", features: ["<span>✦</span> <b>Biblioteca Total:</b> Todos os sons premium.", "<span>✦</span> <b>Sempre Ativo:</b> A tela não apaga.", "<span>✦</span> <b>Mixer:</b> Toque vários sons ao mesmo tempo.", "<span>✦</span> <b>Aleatório:</b> Troca automática de sons.", "<span>✦</span> <b>Modo Sono:</b> Luz zero para relaxamento."], guide: ["<b>1. Manual:</b> Clique nos ícones para iniciar/parar.", "<b>2. Multi:</b> Toque em vários para criar seu mix.", "<b>3. Auto:</b> Pressione <b>Tocar</b> para troca aleatória.", "<b>4. Velocidade:</b> Mude o ritmo no menu."], speeds: { slow: "Lento", medium: "Médio", fast: "Rápido" } },
-  uk: { code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", sleep: "Сон", tabFeatures: "Функції", tabGuide: "Інструкція", features: ["<span>✦</span> <b>Повна Бібліотека:</b> Всі звуки розблоковано.", "<span>✦</span> <b>Без Сну:</b> Екран не згасає автоматично.", "<span>✦</span> <b>Міксер:</b> Грайте кілька звуків одночасно.", "<span>✦</span> <b>Рандомайзер:</b> Автоматичне перемикання.", "<span>✦</span> <b>Нічний Режим:</b> Повна темрява для сну."], guide: ["<b>1. Ручний:</b> Натисніть на звук для старту/стопу.", "<b>2. Мікс:</b> Натискайте кілька звуків разом.", "<b>3. Авто:</b> Кнопка <b>ГРАТИ</b> для випадкового режиму.", "<b>4. Швидкість:</b> Змінюйте темп у меню."], speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } },
-  ru: { code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", sleep: "Сон", tabFeatures: "Функции", tabGuide: "Инструкция", features: ["<span>✦</span> <b>Полная библиотека:</b> Все звуки открыты.", "<span>✦</span> <b>Бодрость:</b> Экран не гаснет во время сеанса.", "<span>✦</span> <b>Микшер:</b> Запуск нескольких звуков сразу.", "<span>✦</span> <b>Рандомайзер:</b> Авто-переключение звуков.", "<span>✦</span> <b>Режим Сна:</b> Минимум света для отдыха."], guide: ["<b>1. Ручной:</b> Нажми на иконку для старта или стопа.", "<b>2. Микс:</b> Выбирай несколько звуков для фона.", "<b>3. Авто:</b> Кнопка <b>ИГРАТЬ</b> включит случайный режим.", "<b>4. Скорость:</b> Настрой ритм переключения в меню."], speeds: { slow: "Медленно", medium: "Средне", fast: "Быстро" } }
+  en: { 
+    code: "EN", title: "BUCKET ASMR", play: "Play", pause: "Pause", repair: "REPAIR", sleep: "Sleep", tabFeatures: "Advantages", tabGuide: "Guide", 
+    features: [
+        "<span>✦</span> <b>Full Library:</b> All 50+ sounds unlocked.", 
+        "<span>✦</span> <b>No Ads:</b> Clean interface for focus.",
+        "<span>✦</span> <b>Stay Awake:</b> Screen won't lock automatically.", 
+        "<span>✦</span> <b>Mixer Mode:</b> Launch 3+ sounds together.", 
+        "<span>✦</span> <b>Smart Random:</b> Infinite automatic session.", 
+        "<span>✦</span> <b>Eco Sleep:</b> OLED optimization for battery."
+    ], 
+    guide: [
+        "<b>1. Manual:</b> Click icons to toggle sounds.", 
+        "<b>2. Mixing:</b> Combine sounds for a deep 3D effect.", 
+        "<b>3. Auto:</b> Use <b>PLAY</b> for random switching.", 
+        "<b>4. Tempo:</b> Change logic speed in the menu.",
+        "<b>5. Sleep:</b> Use for black screen background play."
+    ], 
+    speeds: { slow: "Slow", medium: "Medium", fast: "Fast" } 
+  },
+  pt: { 
+    code: "PT", title: "BALDE ASMR", play: "Tocar", pause: "Pausa", repair: "REPARAR", sleep: "Dormir", tabFeatures: "Vantagens", tabGuide: "Guia", 
+    features: [
+        "<span>✦</span> <b>Biblioteca Total:</b> Mais de 50 sons.", 
+        "<span>✦</span> <b>Sem Anúncios:</b> Foco total no relaxamento.",
+        "<span>✦</span> <b>Sempre Ativo:</b> A tela não bloqueia.", 
+        "<span>✦</span> <b>Modo Mixer:</b> 3+ sons ao mesmo tempo.", 
+        "<span>✦</span> <b>Aleatório:</b> Sessão infinita automática.", 
+        "<span>✦</span> <b>Eco Sleep:</b> Otimizado para sua bateria."
+    ], 
+    guide: [
+        "<b>1. Manual:</b> Clique nos ícones para tocar.", 
+        "<b>2. Mixagem:</b> Combine sons para efeito 3D.", 
+        "<b>3. Auto:</b> Use <b>TOCAR</b> para modo aleatório.", 
+        "<b>4. Tempo:</b> Mude a velocidade no menu.",
+        "<b>5. Dormir:</b> Use para tela preta e economia."
+    ], 
+    speeds: { slow: "Lento", medium: "Médio", fast: "Rápido" } 
+  },
+  uk: { 
+    code: "UK", title: "ВІДРО АСМР", play: "Грати", pause: "Пауза", repair: "ЛАГОДИТИ", sleep: "Сон", tabFeatures: "Переваги", tabGuide: "Інструкція", 
+    features: [
+        "<span>✦</span> <b>Повна Бібліотека:</b> Доступ до всіх звуків.", 
+        "<span>✦</span> <b>Без Реклами:</b> Тільки чистий звук.",
+        "<span>✦</span> <b>Без Сну:</b> Екран не згасає сам по собі.", 
+        "<span>✦</span> <b>Режим Міксер:</b> 3+ звуки одночасно.", 
+        "<span>✦</span> <b>Рандомайзер:</b> Нескінченна сесія.", 
+        "<span>✦</span> <b>Еко Сон:</b> Оптимізація для батареї iPhone."
+    ], 
+    guide: [
+        "<b>1. Ручний:</b> Тисни на іконку для запуску.", 
+        "<b>2. Мікс:</b> Поєднуй звуки для 3D ефекту.", 
+        "<b>3. Авто:</b> Кнопка <b>ГРАТИ</b> для рандому.", 
+        "<b>4. Темп:</b> Змінюй швидкість у меню.",
+        "<b>5. Сон:</b> Чорний екран для прослуховування вночі."
+    ], 
+    speeds: { slow: "Повільно", medium: "Середньо", fast: "Швидко" } 
+  },
+  ru: { 
+    code: "RU", title: "ВЕДРО АСМР", play: "Играть", pause: "Пауза", repair: "ЧИНИТЬ", sleep: "Сон", tabFeatures: "Преимущества", tabGuide: "Инструкция", 
+    features: [
+        "<span>✦</span> <b>Библиотека:</b> Доступ ко всем 50+ звукам.", 
+        "<span>✦</span> <b>Без Рекламы:</b> Чистый интерфейс.",
+        "<span>✦</span> <b>Бодрость:</b> Экран не заблокируется сам.", 
+        "<span>✦</span> <b>Микшер:</b> Запуск 3+ звуков одновременно.", 
+        "<span>✦</span> <b>Рандомайзер:</b> Бесконечная авто-сессия.", 
+        "<span>✦</span> <b>Эко Сон:</b> Экономия заряда на OLED."
+    ], 
+    guide: [
+        "<b>1. Ручной:</b> Нажми на звук для старта/стопа.", 
+        "<b>2. Микс:</b> Смешивай звуки для объема.", 
+        "<b>3. Авто:</b> Кнопка <b>ИГРАТЬ</b> для рандома.", 
+        "<b>4. Темп:</b> Настрой скорость в меню.",
+        "<b>5. Сон:</b> Черный экран для сна и экономии."
+    ], 
+    speeds: { slow: "Медленно", medium: "Средне", fast: "Быстро" } 
+  }
 };
 
 let audioElements = [], randomActive = false, sleepMode = false, langIdx = 0;
@@ -245,11 +310,11 @@ let currentSpeedValue = 34, nextCycleTimeout = null;
 const langOrder = ['en', 'pt', 'uk', 'ru'];
 
 function checkPass() {
-  if (btoa(document.getElementById('pass-input').value) === 'YnVja2V0MjAyNg==') {
+  if (btoa(document.getElementById('pass-input').value) === 'YXNtcg==') {
     document.getElementById('pass-screen').classList.add('hidden');
     document.getElementById('welcomeModal').style.display = 'flex';
     updateConnections();
-    requestWakeLock(); // Активируем запрет блокировки
+    requestWakeLock();
   } else {
     document.getElementById('error-msg').style.display = 'block';
   }
@@ -373,7 +438,6 @@ document.getElementById('speedTrigger').onclick = () => document.getElementById(
 document.getElementById('repairBtn').onclick = () => location.reload();
 document.getElementById('closeWelcome').onclick = () => { 
     document.getElementById('welcomeModal').style.display = 'none';
-    requestWakeLock(); // Активируем замок при старте
 };
 
 document.querySelectorAll('.lang-switcher-btn').forEach(btn => {
@@ -385,6 +449,9 @@ document.getElementById('sleepBtn').onclick = () => {
     document.body.style.background = sleepMode ? "#000" : "";
     document.getElementById('stars').style.opacity = sleepMode ? "0" : "1";
     document.getElementById('sleepBtn').classList.toggle('active', sleepMode);
+    
+    // Скрываем сетку звуков для экономии энергии
+    document.getElementById('soundGrid').classList.toggle('hidden', sleepMode);
     
     if (sleepMode) {
       if(presenceRef) presenceRef.remove();
@@ -404,13 +471,15 @@ function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
 window.onresize = resize; resize();
 const starsArr = Array.from({length: 70}, () => ({ x: Math.random() * innerWidth, y: Math.random() * innerHeight, r: Math.random() * 1.5, a: Math.random(), s: Math.random() * 0.01 }));
 function draw() {
-  ctx.clearRect(0,0,innerWidth,innerHeight);
   if(!sleepMode) {
+    ctx.clearRect(0,0,innerWidth,innerHeight);
     starsArr.forEach(s => {
       s.a += s.s; if(s.a > 1 || s.a < 0) s.s *= -1;
       ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
       ctx.fillStyle = `rgba(255,255,255,${Math.abs(s.a)})`; ctx.fill();
     });
+  } else {
+    ctx.clearRect(0,0,innerWidth,innerHeight);
   }
   requestAnimationFrame(draw);
 }
