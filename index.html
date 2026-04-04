@@ -81,7 +81,7 @@
   
   .mute-btn { position: absolute; top: 5px; right: 5px; width: 22px; height: 22px; background: rgba(255,255,255,0.1); border-radius: 50%; display: none; align-items: center; justify-content: center; font-size: 10px; border: 1px solid rgba(255,255,255,0.2); z-index: 15; }
   .active .mute-btn { display: flex; }
-  .mute-btn.muted { background: #ff5050; border-color: #ff8080; }
+  .mute-btn.muted { background: #ff5050; border-color: #ff8080; color: white; }
 
   .custom-select-container { position: relative; }
   .select-trigger { padding: 8px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.15); color: white; cursor: pointer; font-weight: bold; font-size: 13px; min-width: 90px; text-align: center; }
@@ -355,16 +355,25 @@ sounds.forEach((s, idx) => {
     state.active ? fadeOut(state) : fadeIn(state);
   };
 
+  // ИЗМЕНЕНИЕ: Мгновенное выключение звука при нажатии на динамик
   btn.querySelector('.mute-btn').onclick = (e) => {
     e.stopPropagation();
     state.muted = !state.muted;
-    state.audio.volume = state.muted ? 0 : 0.6;
     btn.querySelector('.mute-btn').classList.toggle('muted', state.muted);
+    
+    if (state.muted) {
+        // Если нажали на "заглушить" — мгновенно останавливаем звук
+        fadeOut(state); 
+    } else {
+        // Если вернули звук, устанавливаем громкость (но не запускаем, если не активен)
+        state.audio.volume = 0.6;
+    }
   };
   audioElements.push(state);
 });
 
 function fadeIn(el) {
+  if (el.muted) return; // Не запускать, если звук заглушен
   el.active = true; el.btn.classList.add('active'); el.btn.style.backgroundColor = el.color + "44";
   el.audio.volume = 0; el.audio.play().catch(()=>{});
   let v = 0; const interval = setInterval(() => {
@@ -410,20 +419,35 @@ document.getElementById('randomBtn').onclick = () => {
   updateUI();
 };
 
+// ИЗМЕНЕНИЕ: Исправленная функция runRandom с фильтром по muted
 function runRandom() {
   if (!randomActive) return;
-  const pool = audioElements.filter(el => el.loaded);
+
+  // Теперь в пул попадают только те звуки, которые загружены И не заглушены пользователем
+  const pool = audioElements.filter(el => el.loaded && !el.muted);
+
   if (pool.length === 0) { 
-    audioElements.forEach(el => el.btn.click());
+    // Если все звуки заглушены или не загружены, ничего не играем, 
+    // но проверяем снова через 2 секунды (вдруг пользователь включит звук)
     nextCycleTimeout = setTimeout(runRandom, 2000);
     return;
   }
+
+  // Выбираем количество звуков для одновременного воспроизведения
   const count = Math.floor(Math.random() * 2) + 1;
   const toPlay = pool.sort(() => 0.5 - Math.random()).slice(0, count);
+
   audioElements.forEach(el => {
-    if (toPlay.includes(el)) { if(!el.active) fadeIn(el); } 
-    else { if(el.active) fadeOut(el); }
+    // Если звук попал в выборку "играть"
+    if (toPlay.includes(el)) { 
+      if(!el.active) fadeIn(el); 
+    } 
+    // Если звук НЕ в выборке ИЛИ он был заглушен вручную — выключаем его
+    else { 
+      if(el.active) fadeOut(el); 
+    }
   });
+
   nextCycleTimeout = setTimeout(runRandom, currentSpeedValue * 1000);
 }
 
@@ -450,7 +474,6 @@ document.getElementById('sleepBtn').onclick = () => {
     document.getElementById('stars').style.opacity = sleepMode ? "0" : "1";
     document.getElementById('sleepBtn').classList.toggle('active', sleepMode);
     
-    // Скрываем сетку звуков для экономии энергии
     document.getElementById('soundGrid').classList.toggle('hidden', sleepMode);
     
     if (sleepMode) {
