@@ -114,8 +114,22 @@
     <input type="password" id="pass-input" placeholder="••••••••" autofocus>
     <button class="pass-btn" onclick="checkPass()">Enter Premium</button>
     <div id="error-msg" class="error-msg">
-        Invalid code. <a href="https://www.patreon.com/posts/join-to-unlock-154613006" target="_blank">Get Access</a>
+    <div style="margin-bottom: 12px; color: #ffb400; font-weight: bold;">Unlock Full Access:</div>
+    <div style="display: flex; gap: 8px; justify-content: center;">
+        <a href="https://www.patreon.com/c/bucket_asmr/membership" target="_blank" 
+           style="flex: 1; background: rgba(255,180,0,0.1); border: 1px solid #ffb400; color: #ffb400; padding: 10px 5px; border-radius: 12px; text-decoration: none; font-size: 11px; line-height: 1.2;">
+           <span style="display: block; opacity: 0.7;">Basic Plan</span>
+           <b style="font-size: 13px;">1 Month</b><br>$4.99
+        </a>
+        
+        <a href="https://www.patreon.com/c/bucket_asmr/membership" target="_blank" 
+           style="flex: 1; background: #ffb400; border: 1px solid #ffb400; color: black; padding: 10px 5px; border-radius: 12px; text-decoration: none; font-size: 11px; line-height: 1.2;">
+           <span style="display: block; opacity: 0.7;">Best Value</span>
+           <b style="font-size: 13px;">3 Months</b><br>$11.99
+        </a>
     </div>
+    <p style="font-size: 10px; margin-top: 10px; opacity: 0.6;">Select your tier on Patreon to get the code</p>
+</div>
   </div>
 </div>
 
@@ -306,7 +320,7 @@ let currentSpeedValue = 34, nextCycleTimeout = null;
 const langOrder = ['en', 'pt', 'uk', 'ru'];
 
 function checkPass() {
-  if (btoa(document.getElementById('pass-input').value) === 'YXNtcg==') {
+  if (['ZW5qb3k=', 'Z29sZA==', 'YXNtcg=='].includes(btoa(document.getElementById('pass-input').value))) {
     document.getElementById('pass-screen').classList.add('hidden');
     document.getElementById('welcomeModal').style.display = 'flex';
     updateConnections();
