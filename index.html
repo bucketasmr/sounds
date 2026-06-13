@@ -58,7 +58,8 @@
     background: rgba(255, 50, 50, 0.15);
     border: 1px solid rgba(255, 50, 50, 0.4);
     padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; color: #ff8080;
-    display: flex; align-items: center; gap: 5px; text-transform: uppercase;
+    display: none !important; /* СКРЫТО ПО УМОЛЧАНИЮ ДЛЯ ВСЕХ ПОЛЬЗОВАТЕЛЕЙ */
+    align-items: center; gap: 5px; text-transform: uppercase;
   }
   .live-dot { width: 6px; height: 6px; background: #ff3030; border-radius: 50%; animation: blink 1.5s infinite; }
   @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
@@ -188,15 +189,15 @@
     <div id="error-msg" class="error-msg">
       <div style="margin-bottom: 12px; color: #ffb400; font-weight: bold;">Unlock Full Access:</div>
       <div style="display: flex; gap: 8px; justify-content: center;">
-          <a href="https://www.patreon.com/c/bucket_asmr/membership" target="_blank" 
+          <a href="https://bucketasmr.github.io/lite/" target="_blank" 
              style="flex: 1; background: rgba(255,180,0,0.1); border: 1px solid #ffb400; color: #ffb400; padding: 10px 5px; border-radius: 12px; text-decoration: none; font-size: 11px; line-height: 1.2;">
-             <span style="display: block; opacity: 0.7;">Basic Plan</span>
-             <b style="font-size: 13px;">1 Month</b><br>$4.99
+             <span style="display: block; opacity: 0.7;"></span>
+             <b style="font-size: 15px;">Free</b><br>App
           </a>
-          <a href="https://www.patreon.com/c/bucket_asmr/membership" target="_blank" 
+          <a href="https://www.patreon.com/bucket_asmr/posts/asmr-app-accept-160833268?utm_medium=clipboard_copy&utm_source=copyLink&utm_campaign=postshare_creator&utm_content=join_link" target="_blank" 
              style="flex: 1; background: #ffb400; border: 1px solid #ffb400; color: black; padding: 10px 5px; border-radius: 12px; text-decoration: none; font-size: 11px; line-height: 1.2;">
-             <span style="display: block; opacity: 0.7;">Best Value</span>
-             <b style="font-size: 13px;">3 Months</b><br>$11.99
+             <span style="display: block; opacity: 0.7;">Buy Access Code</span>
+             <b style="font-size: 13px;">for $3.5</b><br>Forever
           </a>
       </div>
       <p style="font-size: 10px; margin-top: 10px; opacity: 0.6;">Select your tier on Patreon to get the code</p>
@@ -425,9 +426,29 @@ let isNoticeDisabled = false; // Флаг полной блокировки по
 let steamParticles = [];
 
 function checkPass() {
-  if (['ZW5qb3k=', 'Z29sZA==', 'YXNtcg=='].includes(btoa(document.getElementById('pass-input').value))) {
+  const inputPass = document.getElementById('pass-input').value;
+  const encodedPass = btoa(inputPass);
+
+  // Код обычного пользователя: 'gold' (зашифрован как 'Z29sZA==')
+  const userPasswords = ['Z29sZA=='];
+  
+  // Твой админский код: 'boroduha' (зашифрован как 'Ym9yb2R1aGE=')
+  const adminPassword = 'Ym9yb2R1aGE='; 
+
+  if (encodedPass === adminPassword) {
+    // Вход для админа: открываем приложение и включаем отображение счетчика зрителей
     document.getElementById('pass-screen').classList.add('hidden');
     document.getElementById('welcomeModal').style.display = 'flex';
+    
+    document.querySelector('.live-counter').style.setProperty('display', 'flex', 'important');
+    
+    updateConnections();
+    requestWakeLock();
+  } else if (userPasswords.includes(encodedPass)) {
+    // Вход для пользователя: открываем приложение, счетчик LIVE остается невидимым
+    document.getElementById('pass-screen').classList.add('hidden');
+    document.getElementById('welcomeModal').style.display = 'flex';
+    
     updateConnections();
     requestWakeLock();
   } else {
@@ -682,7 +703,6 @@ document.getElementById('sleepBtn').onclick = () => {
 
 // ЛОГИКА ОТСЛЕЖИВАНИЯ БЕЗДЕЙСТВИЯ
 function resetIdleTimer() {
-  // Если приложение не готово, окно открыто или напоминания полностью отключены кнопкой — выходим
   if (!appIsReady || isNoticeOpen || isNoticeDisabled) return; 
   
   clearTimeout(idleTimer);
@@ -724,12 +744,12 @@ document.getElementById('idleCloseBtn').onclick = (e) => {
   resetIdleTimer();
 };
 
-// ТРЕТЬЯ КНОПКА: Отключение уведомления навсегда до перезагрузки страницы
+// Отключение уведомления навсегда до перезагрузки страницы
 document.getElementById('idleDisableBtn').onclick = (e) => {
   e.stopPropagation();
-  isNoticeDisabled = true; // Выставляем блокирующий флаг
-  clearTimeout(idleTimer); // Сбрасываем текущий запущенный таймер
-  hideIdleNotification();  // Прячем окно
+  isNoticeDisabled = true; 
+  clearTimeout(idleTimer); 
+  hideIdleNotification();  
 };
 
 // Инициализация Canvas
