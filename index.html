@@ -254,7 +254,14 @@
 
   <div class="controls" id="uiControls">
     <button id="randomBtn">Play</button>
-	<button id="linksBtnRed" onclick="window.open('https://www.youtube.com/@BucketASMR', '_blank')">YouTube</button>
+<div class="custom-select-container" id="linksSelectContainer">
+      <div class="select-trigger" id="linksTrigger" style="background: rgba(226, 43, 43, 0.4); border: 1px solid rgba(226, 43, 43, 0.3); min-width: 80px; color: #fff; font-weight: bold;">Links</div>
+      <div class="custom-dropdown" id="linksOptions">
+        <button onclick="window.open('https://www.youtube.com/@BucketASMR', '_blank')">YouTube</button>
+        <button onclick="window.open('https://www.tiktok.com/@bucket_asmr', '_blank')">TikTok</button>
+        <button onclick="window.open('https://www.instagram.com/bucket_asmr', '_blank')">Instagram</button>
+      </div>
+    </div>
     
     <div class="custom-select-container">
         <button id="favBtn" class="select-trigger" style="background: rgba(255, 180, 0, 0.2); border: 1px solid #ffb400; min-width: 60px;">⭐ Fav</button>
@@ -714,7 +721,7 @@ function resetIdleTimer() {
 
   idleTimer = setTimeout(() => {
     showIdleNotification();
-  }, 5000);
+  }, 24000); // 24 секунд бездействия
 }
 
 function showIdleNotification() {
@@ -841,6 +848,29 @@ function switchTab(event, tabId) {
     event.currentTarget.classList.add('active');
 }
 function showHelp() { document.getElementById('welcomeModal').style.display = 'flex'; }
+
+// Логика для выпадающего списка соцсетей (Links) в платной версии
+const linksTrigger = document.getElementById('linksTrigger');
+const linksOptions = document.getElementById('linksOptions');
+const speedDropdown = document.getElementById('speedDropdown');
+
+if (linksTrigger && linksOptions) {
+  // Открытие / закрытие списка по клику на кнопку Links
+  linksTrigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    
+    // Закрываем список скорости, если он был открыт
+    if (speedDropdown) speedDropdown.classList.remove('open');
+    
+    // Переключаем класс видимости для списка ссылок
+    linksOptions.classList.toggle('open');
+  });
+
+  // Закрытие списка соцсетей, если кликнули в любую другую точку экрана
+  window.addEventListener('click', () => {
+    linksOptions.classList.remove('open');
+  });
+}
 </script>
 </body>
 </html>
