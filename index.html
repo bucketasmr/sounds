@@ -848,12 +848,10 @@ function switchTab(event, tabId) {
     event.currentTarget.classList.add('active');
 }
 function showHelp() { document.getElementById('welcomeModal').style.display = 'flex'; }
+
 // === БЕЗОПАСНЫЙ СЧЕТЧИК КЛИКОВ ДЛЯ IPHONE И FIREBASE ===
 function trackLinkClick(platform, url) {
-    // 1. Сразу открываем вкладку, чтобы iOS/Safari не заблокировали окно
     const newWindow = window.open(url, '_blank');
-
-    // 2. В фоне отправляем транзакцию счетчика в Firebase
     try {
         if (typeof firebase !== 'undefined' && firebase.database) {
             const clickRef = firebase.database().ref('link_clicks/' + platform);
@@ -866,53 +864,42 @@ function trackLinkClick(platform, url) {
     }
 }
 
-// === ИСПРАВЛЕНИЕ БАГА ЗАМОРОЗКИ IOS (РАЗБЛОКИРОВКА ЭКРАНА) ===
-// === УМНОЕ ПЕРЕПОДКЛЮЧЕНИЕ FIREBASE ДЛЯ IOS (БЕЗ ПЕРЕЗАГРУЗКИ СТРАНИЦЫ) ===
-function handleIOSWakeUp() {
-    if (!document.hidden) {
-        try {
-            // Проверяем, настроен ли Firebase
-            if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
-                console.log("Оживляем Firebase после сна...");
-                
-                // 1. Отключаемся от базы данных
+// === УМНОЕ ОЖИВЛЕНИЕ FIREBASE (СТРОГО ДЛЯ IPHONE / IOS) ===
+function forceFirebaseOnline() {
+    try {
+        if (typeof firebase !== 'undefined' && firebase.database) {
+            // Проверяем, что это iOS (iPhone / iPad)
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+            
+            if (isIOS) {
+                // Передергиваем сеть ТОЛЬКО на айфоне, чтобы победить заморозку Safari
                 firebase.database().goOffline();
-                
-                // 2. Полностью удаляем текущее зависшее приложение Firebase из памяти
-                firebase.app().delete().then(function() {
-                    // 3. Заново инициализируем Firebase с твоими настройками
-                    firebase.initializeApp(firebaseConfig);
-                    // 4. Включаем базу обратно
+                setTimeout(() => {
                     firebase.database().goOnline();
-                    console.log("Firebase успешно перезапущен в фоне!");
-                }).catch(function(error) {
-                    console.error("Ошибка при удалении инстанса Firebase:", error);
-                });
+                    console.log("[iOS] Соединение принудительно восстановлено");
+                }, 100);
+            } else {
+                // На Windows / Mac / Android просто мягко проверяем коннект без сброса в 0
+                firebase.database().goOnline();
             }
-        } catch (error) {
-            console.error("Ошибка восстановления базы данных:", error);
         }
+    } catch (e) {
+        console.error("Ошибка оживления базы:", e);
     }
 }
 
-// === НАДЕЖНОЕ ФОНОВОЕ ОЖИВЛЕНИЕ FIREBASE (БЕЗ СБРОСА СЕССИИ И БЕЗ ПЕРЕЗАГРУЗОК) ===
+// Слушатели возвращения во вкладку
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
-        try {
-            if (typeof firebase !== 'undefined' && firebase.database) {
-                // Пингуем базу: на ПК мгновенно вернет 1, на iPhone аккуратно поднимет сокеты
-                firebase.database().goOnline();
-            }
-        } catch (e) {
-            console.error("Ошибка goOnline:", e);
-        }
+        forceFirebaseOnline();
     }
 });
-
 window.addEventListener('pageshow', (event) => {
-    if (event.persisted && typeof firebase !== 'undefined' && firebase.database) {
-        firebase.database().goOnline();
-    }
+    forceFirebaseOnline();
+});
+window.addEventListener('focus', () => {
+    forceFirebaseOnline();
 });
 
 // Логика для выпадающего списка соцсетей (Links)
@@ -921,18 +908,12 @@ const linksOptions = document.getElementById('linksOptions');
 const speedDropdown = document.getElementById('speedDropdown');
 
 if (linksTrigger && linksOptions) {
-  // Открытие / закрытие списка по клику на кнопку Links
   linksTrigger.addEventListener('click', (e) => {
     e.stopPropagation();
-    
-    // Закрываем список скорости, если он был открыт
     if (speedDropdown) speedDropdown.classList.remove('open');
-    
-    // Переключаем класс видимости для списка ссылок
     linksOptions.classList.toggle('open');
   });
 
-  // Закрытие списка соцсетей, если кликнули в любую другую точку экрана
   window.addEventListener('click', () => {
     linksOptions.classList.remove('open');
   });
