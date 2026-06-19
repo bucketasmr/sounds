@@ -848,10 +848,12 @@ function switchTab(event, tabId) {
     event.currentTarget.classList.add('active');
 }
 function showHelp() { document.getElementById('welcomeModal').style.display = 'flex'; }
-
 // === БЕЗОПАСНЫЙ СЧЕТЧИК КЛИКОВ ДЛЯ IPHONE И FIREBASE ===
 function trackLinkClick(platform, url) {
+    // 1. Сразу открываем вкладку, чтобы iOS/Safari не заблокировали окно
     const newWindow = window.open(url, '_blank');
+
+    // 2. В фоне отправляем транзакцию счетчика в Firebase
     try {
         if (typeof firebase !== 'undefined' && firebase.database) {
             const clickRef = firebase.database().ref('link_clicks/' + platform);
@@ -860,67 +862,47 @@ function trackLinkClick(platform, url) {
             });
         }
     } catch (error) {
-        logToScreen("Ошибка трекинга ссылок: " + error.message);
+        console.error("Firebase tracking error:", error);
     }
 }
 
-
-// === УМНОЕ ОЖИВЛЕНИЕ FIREBASE ===
-function forceFirebaseOnline(reason) {
-    try {
-        if (typeof firebase !== 'undefined' && firebase.database) {
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-            
-            if (isIOS) {
-                console.log(`Триггер: ${reason}. Перезапуск базы...`);
-                firebase.database().goOffline();
-                setTimeout(() => {
-                    firebase.database().goOnline();
-                    console.log("Firebase онлайн на iOS восстановлен!");
-                }, 150);
-            } else {
+// === ИСПРАВЛЕНИЕ БАГА ЗАМОРОЗКИ IOS (РАЗБЛОКИРОВКА ЭКРАНА) ===
+function handleIOSWakeUp() {
+    if (!document.hidden) {
+        try {
+            if (typeof firebase !== 'undefined' && firebase.database) {
                 firebase.database().goOnline();
             }
+        } catch (error) {
+            console.error("Ошибка восстановления базы данных:", error);
         }
-    } catch (e) {
-        console.error("Ошибка оживления: " + e.message);
     }
 }
-
-// Отслеживание системных событий
-document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) forceFirebaseOnline('visibilitychange');
-});
-window.addEventListener('pageshow', (e) => {
-    forceFirebaseOnline('pageshow');
-});
-window.addEventListener('focus', () => {
-    forceFirebaseOnline('focus');
-});
-
-// === АВТОМАТИЧЕСКИЙ ПЕРЕЗАПУСК ПРИ ЛЮБОМ КЛИКЕ (Вариант 2) ===
-// Если сокеты на iOS уснули, то первое же нажатие пользователя на плеер разбудит их в фоне
-document.addEventListener('click', () => {
-    // Делаем мягкую проверку, если Firebase считает, что он оффлайн — будим
-    if (typeof firebase !== 'undefined' && firebase.database) {
-        forceFirebaseOnline('User Click');
+document.addEventListener('visibilitychange', handleIOSWakeUp);
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        handleIOSWakeUp();
     }
-}, { passive: true });
+});
 
-
-// Логика для выпадающего списка соцсетей (Links)
+// Логика для выпадающего списка соцсетей (Links) в платной версии
 const linksTrigger = document.getElementById('linksTrigger');
 const linksOptions = document.getElementById('linksOptions');
 const speedDropdown = document.getElementById('speedDropdown');
 
 if (linksTrigger && linksOptions) {
+  // Открытие / закрытие списка по клику на кнопку Links
   linksTrigger.addEventListener('click', (e) => {
     e.stopPropagation();
+    
+    // Закрываем список скорости, если он был открыт
     if (speedDropdown) speedDropdown.classList.remove('open');
+    
+    // Переключаем класс видимости для списка ссылок
     linksOptions.classList.toggle('open');
   });
 
+  // Закрытие списка соцсетей, если кликнули в любую другую точку экрана
   window.addEventListener('click', () => {
     linksOptions.classList.remove('open');
   });
