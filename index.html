@@ -653,19 +653,30 @@ function updateUI() {
   });
 }
 
+// === ЕДИНЫЙ УМНЫЙ ЦЕНТР ОБНОВЛЕНИЯ ОНЛАЙНА ===
 function updateConnections() {
-    if (!presenceRef) {
-        presenceRef = connectionsRef.push(true);
-        presenceRef.onDisconnect().remove();
+    if (typeof firebase === 'undefined' || !firebase.database) return;
+    
+    // Если ссылка на прошлую сессию осталась — мягко очищаем её в памяти
+    if (presenceRef) {
+        try { presenceRef.remove(); } catch(e) {}
+        presenceRef = null;
     }
+
+    // Создаем чистую валидную запись true в базе, как и раньше
+    presenceRef = connectionsRef.push(true);
+    presenceRef.onDisconnect().remove();
+
+    // Функция обновления цифры на экране дашборда
     const fetchCount = () => {
         connectionsRef.once('value', snap => {
             document.getElementById('online-count').innerText = snap.numChildren() || 1;
         });
     };
+
     fetchCount();
     if(liveInterval) clearInterval(liveInterval);
-    liveInterval = setInterval(fetchCount, 60000); 
+    liveInterval = setInterval(fetchCount, 15000); // 15 секунд для отзывчивости счётчика
 }
 
 function setSpeed(v, label) {
@@ -696,7 +707,9 @@ document.getElementById('sleepBtn').onclick = () => {
     document.getElementById('sleepBtn').classList.toggle('active', sleepMode);
     document.getElementById('soundGrid').classList.toggle('hidden', sleepMode);
     if (sleepMode) {
-      if(presenceRef) presenceRef.remove();
+      if(presenceRef) {
+        try { presenceRef.remove(); } catch(e) {}
+      }
       presenceRef = null;
       if(liveInterval) clearInterval(liveInterval);
       firebase.database().goOffline();
@@ -898,46 +911,21 @@ function showWakeUpScreen() {
     }
 }
 
-// Клик по кнопке Continue: Принудительное пробитие заморозки через HTTP REST API
+// Клик по кнопке Continue: Пробиваем заморозку iOS 18 через сброс сокета и пересоздание true-сессии
 function handleContinueClick() {
     try {
-        if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
-            // 1. Извлекаем URL базы данных и ID проекта прямо из твоего конфига Firebase
-            const databaseURL = firebaseConfig.databaseURL || `https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com`;
+        if (typeof firebase !== 'undefined' && firebase.database) {
+            console.log("Пробиваем заморозку iOS 18...");
             
-            // 2. Генерируем новый чистый ключ для сессии
-            sessionStorage.removeItem('firebase_online_key');
-            const newKey = firebase.database().ref().push().key;
-            sessionStorage.setItem('firebase_online_key', newKey);
+            // 1. Принудительно гасим старый зависший сокет Сафари
+            firebase.database().goOffline();
             
-            console.log("Отправляем HTTP пинг в обход сокетов...");
-
-            // 3. Прямой Fetch-запрос (REST API) — iOS 18 обязана его пропустить по клику!
-            fetch(`${databaseURL}/online_users/${newKey}.json`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    status: "online",
-                    last_seen: Date.now()
-                })
-            })
-            .then(response => {
-                console.log("REST API: Успешно записали онлайн в базу!");
-                
-                // 4. Мягко будим основную библиотеку Firebase, чтобы подхватить автоудаление
-                const database = firebase.database();
-                database.goOnline();
-                
-                const myOnlineRef = database.ref('online_users').child(newKey);
-                myOnlineRef.onDisconnect().remove();
-            })
-            .catch(err => {
-                console.error("Ошибка REST запроса, пробуем обычный метод:", err);
-                // Резервный вариант, если fetch не прошел
+            // 2. Через 150мс поднимаем сеть заново и регистрируем чистый онлайн
+            setTimeout(() => {
                 firebase.database().goOnline();
-            });
+                updateConnections();
+                console.log("Сеть Firebase успешно восстановлена по кнопке Continue!");
+            }, 150);
         }
     } catch (e) {
         console.error("Ошибка принудительного обновления сессии:", e);
@@ -948,11 +936,12 @@ function handleContinueClick() {
     setTimeout(() => { wakeUpOverlay.style.display = 'none'; }, 300);
 }
 
-// Слушатели событий
+// Слушатели событий экрана разблокировки
 continueBtn.addEventListener('click', handleContinueClick);
 continueBtn.addEventListener('touchstart', () => { continueBtn.style.transform = 'scale(0.95)'; });
 continueBtn.addEventListener('touchend', () => { continueBtn.style.transform = 'scale(1)'; });
 
+// Показываем экран Continue только при выходе из сна
 document.addEventListener('visibilitychange', () => {
     if (!document.hidden) showWakeUpScreen();
 });
