@@ -849,6 +849,7 @@ function switchTab(event, tabId) {
 }
 function showHelp() { document.getElementById('welcomeModal').style.display = 'flex'; }
 
+// === БЕЗОПАСНЫЙ СЧЕТЧИК КЛИКОВ ДЛЯ IPHONE И FIREBASE ===
 function trackLinkClick(platform, url) {
     const newWindow = window.open(url, '_blank');
     try {
@@ -863,34 +864,76 @@ function trackLinkClick(platform, url) {
     }
 }
 
-// === УМНОЕ ОЖИВЛЕНИЕ FIREBASE БЕЗ СБРОСА В НОЛЬ ===
-function forceFirebaseOnline() {
-    try {
-        if (typeof firebase !== 'undefined' && firebase.database) {
-            // Просто мягко будим соединение, не вызывая goOffline(), чтобы онлайн не прыгал в 0
-            firebase.database().goOnline();
-        }
-    } catch (e) {
-        console.error("Ошибка оживления базы:", e);
+// === ЛОГИКА ЭКРАНА "CONTINUE" ПРИ РАЗБЛОКИРОВКЕ ДЛЯ IOS ===
+// 1. Создаем стильный полупрозрачный экран блокировки (изначально скрыт)
+const wakeUpOverlay = document.createElement('div');
+wakeUpOverlay.style.cssText = `
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(5, 5, 5, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+    z-index: 100000; display: none; flex-direction: column; align-items: center; justify-content: center;
+    transition: opacity 0.3s ease; opacity: 0;
+`;
+
+// 2. Создаем кнопку Continue
+const continueBtn = document.createElement('button');
+continueBtn.innerText = "Continue";
+continueBtn.style.cssText = `
+    padding: 14px 40px; font-size: 18px; font-weight: 600; color: white;
+    background: linear-gradient(135deg, #8a2be2 0%, #4a00e0 100%);
+    border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 4px 15px rgba(138, 43, 226, 0.4);
+    transition: transform 0.2s ease, box-shadow 0.2s ease; -webkit-tap-highlight-color: transparent;
+`;
+
+wakeUpOverlay.appendChild(continueBtn);
+document.body.appendChild(wakeUpOverlay);
+
+// Функция показа экрана Continue
+function showWakeUpScreen() {
+    // Показываем экран только на iOS (iPhone/iPad) после выхода из сна
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    
+    if (isIOS) {
+        wakeUpOverlay.style.display = 'flex';
+        setTimeout(() => { wakeUpOverlay.style.opacity = '1'; }, 10);
     }
 }
 
-// Отслеживание системных событий возврата на вкладку
+// Функция скрытия экрана и принудительного пинга базы
+function handleContinueClick() {
+    try {
+        if (typeof firebase !== 'undefined' && firebase.database) {
+            // Разрываем старый зависший сокет и сразу поднимаем новый по клику
+            firebase.database().goOffline();
+            setTimeout(() => {
+                firebase.database().goOnline();
+                console.log("Соединение успешно восстановлено по клику на Continue");
+            }, 50);
+        }
+    } catch (e) {
+        console.error("Ошибка принудительного переподключения:", e);
+    }
+    
+    // Плавно скрываем оверлей
+    wakeUpOverlay.style.opacity = '0';
+    setTimeout(() => { wakeUpOverlay.style.display = 'none'; }, 300);
+}
+
+// Привязываем переподключение к клику на кнопку
+continueBtn.addEventListener('click', handleContinueClick);
+
+// Эффект нажатия для кнопки
+continueBtn.addEventListener('touchstart', () => { continueBtn.style.transform = 'scale(0.95)'; });
+continueBtn.addEventListener('touchend', () => { continueBtn.style.transform = 'scale(1)'; });
+
+// Отслеживаем разблокировку экрана или возврат из глубокого сна
 document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) forceFirebaseOnline();
+    if (!document.hidden) showWakeUpScreen();
 });
 window.addEventListener('pageshow', (event) => {
-    forceFirebaseOnline();
-});
-window.addEventListener('focus', () => {
-    forceFirebaseOnline();
+    if (event.persisted) showWakeUpScreen();
 });
 
-// === АВТОМАТИЧЕСКИЙ ПЕРЕЗАПУСК ПРИ КЛИКЕ ===
-// Любое нажатие на экран (например, по плееру) мягко подтолкнет уснувшие сокеты iOS в фоне
-document.addEventListener('click', () => {
-    forceFirebaseOnline();
-}, { passive: true });
 
 // Логика для выпадающего списка соцсетей (Links)
 const linksTrigger = document.getElementById('linksTrigger');
