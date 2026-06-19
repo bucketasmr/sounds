@@ -860,47 +860,54 @@ function trackLinkClick(platform, url) {
             });
         }
     } catch (error) {
-        console.error("Firebase tracking error:", error);
+        logToScreen("Ошибка трекинга ссылок: " + error.message);
     }
 }
 
-// === УМНОЕ ОЖИВЛЕНИЕ FIREBASE (СТРОГО ДЛЯ IPHONE / IOS) ===
-function forceFirebaseOnline() {
+
+// === УМНОЕ ОЖИВЛЕНИЕ FIREBASE ===
+function forceFirebaseOnline(reason) {
     try {
         if (typeof firebase !== 'undefined' && firebase.database) {
-            // Проверяем, что это iOS (iPhone / iPad)
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
                           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
             
             if (isIOS) {
-                // Передергиваем сеть ТОЛЬКО на айфоне, чтобы победить заморозку Safari
+                console.log(`Триггер: ${reason}. Перезапуск базы...`);
                 firebase.database().goOffline();
                 setTimeout(() => {
                     firebase.database().goOnline();
-                    console.log("[iOS] Соединение принудительно восстановлено");
-                }, 100);
+                    console.log("Firebase онлайн на iOS восстановлен!");
+                }, 150);
             } else {
-                // На Windows / Mac / Android просто мягко проверяем коннект без сброса в 0
                 firebase.database().goOnline();
             }
         }
     } catch (e) {
-        console.error("Ошибка оживления базы:", e);
+        console.error("Ошибка оживления: " + e.message);
     }
 }
 
-// Слушатели возвращения во вкладку
+// Отслеживание системных событий
 document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) {
-        forceFirebaseOnline();
-    }
+    if (!document.hidden) forceFirebaseOnline('visibilitychange');
 });
-window.addEventListener('pageshow', (event) => {
-    forceFirebaseOnline();
+window.addEventListener('pageshow', (e) => {
+    forceFirebaseOnline('pageshow');
 });
 window.addEventListener('focus', () => {
-    forceFirebaseOnline();
+    forceFirebaseOnline('focus');
 });
+
+// === АВТОМАТИЧЕСКИЙ ПЕРЕЗАПУСК ПРИ ЛЮБОМ КЛИКЕ (Вариант 2) ===
+// Если сокеты на iOS уснули, то первое же нажатие пользователя на плеер разбудит их в фоне
+document.addEventListener('click', () => {
+    // Делаем мягкую проверку, если Firebase считает, что он оффлайн — будим
+    if (typeof firebase !== 'undefined' && firebase.database) {
+        forceFirebaseOnline('User Click');
+    }
+}, { passive: true });
+
 
 // Логика для выпадающего списка соцсетей (Links)
 const linksTrigger = document.getElementById('linksTrigger');
