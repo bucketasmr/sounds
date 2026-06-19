@@ -898,31 +898,46 @@ function showWakeUpScreen() {
     }
 }
 
-// Клик по кнопке Continue: Принудительное пересоздание записи в БД
+// Клик по кнопке Continue: Принудительное пробитие заморозки через HTTP REST API
 function handleContinueClick() {
     try {
-        if (typeof firebase !== 'undefined' && firebase.database) {
-            const database = firebase.database();
+        if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
+            // 1. Извлекаем URL базы данных и ID проекта прямо из твоего конфига Firebase
+            const databaseURL = firebaseConfig.databaseURL || `https://${firebaseConfig.projectId}-default-rtdb.firebaseio.com`;
             
-            // Очищаем старый ключ сессии из памяти телефона, чтобы сгенерировать полностью новый
+            // 2. Генерируем новый чистый ключ для сессии
             sessionStorage.removeItem('firebase_online_key');
+            const newKey = firebase.database().ref().push().key;
+            sessionStorage.setItem('firebase_online_key', newKey);
             
-            // Создаем абсолютно новую уникальную запись в узле online_users
-            const newOnlineRef = database.ref('online_users').push();
-            
-            // Сохраняем новый ключ в sessionStorage
-            sessionStorage.setItem('firebase_online_key', newOnlineRef.key);
-            
-            // Записываем данные на сервер
-            newOnlineRef.set({
-                status: "online",
-                last_seen: firebase.database.ServerValue.TIMESTAMP
-            }).then(() => {
-                console.log("Новая сессия успешно создана, онлайн обновлен!");
-            });
+            console.log("Отправляем HTTP пинг в обход сокетов...");
 
-            // Настраиваем автоудаление при следующем реальном выходе
-            newOnlineRef.onDisconnect().remove();
+            // 3. Прямой Fetch-запрос (REST API) — iOS 18 обязана его пропустить по клику!
+            fetch(`${databaseURL}/online_users/${newKey}.json`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    status: "online",
+                    last_seen: Date.now()
+                })
+            })
+            .then(response => {
+                console.log("REST API: Успешно записали онлайн в базу!");
+                
+                // 4. Мягко будим основную библиотеку Firebase, чтобы подхватить автоудаление
+                const database = firebase.database();
+                database.goOnline();
+                
+                const myOnlineRef = database.ref('online_users').child(newKey);
+                myOnlineRef.onDisconnect().remove();
+            })
+            .catch(err => {
+                console.error("Ошибка REST запроса, пробуем обычный метод:", err);
+                // Резервный вариант, если fetch не прошел
+                firebase.database().goOnline();
+            });
         }
     } catch (e) {
         console.error("Ошибка принудительного обновления сессии:", e);
