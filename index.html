@@ -849,7 +849,6 @@ function switchTab(event, tabId) {
 }
 function showHelp() { document.getElementById('welcomeModal').style.display = 'flex'; }
 
-// === БЕЗОПАСНЫЙ СЧЕТЧИК КЛИКОВ ДЛЯ IPHONE И FIREBASE ===
 function trackLinkClick(platform, url) {
     const newWindow = window.open(url, '_blank');
     try {
@@ -860,54 +859,38 @@ function trackLinkClick(platform, url) {
             });
         }
     } catch (error) {
-        logToScreen("Ошибка трекинга ссылок: " + error.message);
+        console.error("Ошибка трекинга ссылок: " + error.message);
     }
 }
 
-
-// === УМНОЕ ОЖИВЛЕНИЕ FIREBASE ===
-function forceFirebaseOnline(reason) {
+// === УМНОЕ ОЖИВЛЕНИЕ FIREBASE БЕЗ СБРОСА В НОЛЬ ===
+function forceFirebaseOnline() {
     try {
         if (typeof firebase !== 'undefined' && firebase.database) {
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || 
-                          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-            
-            if (isIOS) {
-                logToScreen(`Триггер: ${reason}. Перезапуск базы...`);
-                firebase.database().goOffline();
-                setTimeout(() => {
-                    firebase.database().goOnline();
-                    logToScreen("Firebase онлайн на iOS восстановлен!");
-                }, 150);
-            } else {
-                firebase.database().goOnline();
-            }
+            // Просто мягко будим соединение, не вызывая goOffline(), чтобы онлайн не прыгал в 0
+            firebase.database().goOnline();
         }
     } catch (e) {
-        logToScreen("Ошибка оживления: " + e.message);
+        console.error("Ошибка оживления базы:", e);
     }
 }
 
-// Отслеживание системных событий
+// Отслеживание системных событий возврата на вкладку
 document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) forceFirebaseOnline('visibilitychange');
+    if (!document.hidden) forceFirebaseOnline();
 });
-window.addEventListener('pageshow', (e) => {
-    forceFirebaseOnline('pageshow');
+window.addEventListener('pageshow', (event) => {
+    forceFirebaseOnline();
 });
 window.addEventListener('focus', () => {
-    forceFirebaseOnline('focus');
+    forceFirebaseOnline();
 });
 
-// === АВТОМАТИЧЕСКИЙ ПЕРЕЗАПУСК ПРИ ЛЮБОМ КЛИКЕ (Вариант 2) ===
-// Если сокеты на iOS уснули, то первое же нажатие пользователя на плеер разбудит их в фоне
+// === АВТОМАТИЧЕСКИЙ ПЕРЕЗАПУСК ПРИ КЛИКЕ ===
+// Любое нажатие на экран (например, по плееру) мягко подтолкнет уснувшие сокеты iOS в фоне
 document.addEventListener('click', () => {
-    // Делаем мягкую проверку, если Firebase считает, что он оффлайн — будим
-    if (typeof firebase !== 'undefined' && firebase.database) {
-        forceFirebaseOnline('User Click');
-    }
+    forceFirebaseOnline();
 }, { passive: true });
-
 
 // Логика для выпадающего списка соцсетей (Links)
 const linksTrigger = document.getElementById('linksTrigger');
