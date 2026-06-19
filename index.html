@@ -873,18 +873,18 @@ function forceFirebaseOnline(reason) {
                           (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
             
             if (isIOS) {
-                console.log(`Триггер: ${reason}. Перезапуск базы...`);
+                logToScreen(`Триггер: ${reason}. Перезапуск базы...`);
                 firebase.database().goOffline();
                 setTimeout(() => {
                     firebase.database().goOnline();
-                    console.log("Firebase онлайн на iOS восстановлен!");
+                    logToScreen("Firebase онлайн на iOS восстановлен!");
                 }, 150);
             } else {
                 firebase.database().goOnline();
             }
         }
     } catch (e) {
-        console.error("Ошибка оживления: " + e.message);
+        logToScreen("Ошибка оживления: " + e.message);
     }
 }
 
