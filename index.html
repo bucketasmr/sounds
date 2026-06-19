@@ -848,7 +848,6 @@ function switchTab(event, tabId) {
     event.currentTarget.classList.add('active');
 }
 function showHelp() { document.getElementById('welcomeModal').style.display = 'flex'; }
-
 // === БЕЗОПАСНЫЙ СЧЕТЧИК КЛИКОВ ДЛЯ IPHONE И FIREBASE ===
 function trackLinkClick(platform, url) {
     // 1. Сразу открываем вкладку, чтобы iOS/Safari не заблокировали окно
@@ -866,6 +865,25 @@ function trackLinkClick(platform, url) {
         console.error("Firebase tracking error:", error);
     }
 }
+
+// === ИСПРАВЛЕНИЕ БАГА ЗАМОРОЗКИ IOS (РАЗБЛОКИРОВКА ЭКРАНА) ===
+function handleIOSWakeUp() {
+    if (!document.hidden) {
+        try {
+            if (typeof firebase !== 'undefined' && firebase.database) {
+                firebase.database().goOnline();
+            }
+        } catch (error) {
+            console.error("Ошибка восстановления базы данных:", error);
+        }
+    }
+}
+document.addEventListener('visibilitychange', handleIOSWakeUp);
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        handleIOSWakeUp();
+    }
+});
 
 // Логика для выпадающего списка соцсетей (Links) в платной версии
 const linksTrigger = document.getElementById('linksTrigger');
