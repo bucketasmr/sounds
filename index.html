@@ -295,8 +295,28 @@ const firebaseConfig = {
   databaseURL: "https://bucket-asmr-premium-default-rtdb.firebaseio.com"
 };
 firebase.initializeApp(firebaseConfig);
-const connectionsRef = firebase.database().ref('online_users');
+const database = firebase.database();
+
+// Настройка путей в базе данных
+const connectionsRef = database.ref('online_users');
+const viewsRef = database.ref('page_views');
+
 let presenceRef = null, liveInterval = null;
+
+// === СЧЁТЧИК ПРОСМОТРОВ СРАБАТЫВАЕТ СРАЗУ ПРИ ОТКРЫТИИ СТРАНИЦЫ (ДО ПАРОЛЯ) ===
+if (!sessionStorage.getItem('page_view_counted')) {
+    console.log("[Firebase Premium] Фиксация захода на страницу...");
+    viewsRef.transaction((currentValue) => {
+        return (currentValue || 0) + 1;
+    }, (error, committed, snapshot) => {
+        if (error) {
+            console.error("Ошибка фиксации просмотра:", error);
+        } else if (committed) {
+            sessionStorage.setItem('page_view_counted', 'true');
+            console.log("[Firebase Premium] Просмотр успешно засчитан при старте! Всего:", snapshot.val());
+        }
+    });
+}
 
 let wakeLock = null;
 async function requestWakeLock() {
@@ -653,30 +673,30 @@ function updateUI() {
   });
 }
 
-// === ЕДИНЫЙ УМНЫЙ ЦЕНТР ОБНОВЛЕНИЯ ОНЛАЙНА ===
+// === ЕДИНЫЙ РЕАКТИВНЫЙ ЦЕНТР ОБНОВЛЕНИЯ ОНЛАЙНА ПРЕМИУМ ===
 function updateConnections() {
     if (typeof firebase === 'undefined' || !firebase.database) return;
     
-    // Если ссылка на прошлую сессию осталась — мягко очищаем её в памяти
+    // Очищаем старую локальную ссылку перед созданием новой сессии
     if (presenceRef) {
         try { presenceRef.remove(); } catch(e) {}
         presenceRef = null;
     }
 
-    // Создаем чистую валидную запись true в базе, как и раньше
+    // Создаем чистую валидную запись true в базе
     presenceRef = connectionsRef.push(true);
     presenceRef.onDisconnect().remove();
 
-    // Функция обновления цифры на экране дашборда
-    const fetchCount = () => {
-        connectionsRef.once('value', snap => {
-            document.getElementById('online-count').innerText = snap.numChildren() || 1;
-        });
-    };
+    // Снимаем прошлые слушатели, чтобы не дублировать их
+    connectionsRef.off();
 
-    fetchCount();
-    if(liveInterval) clearInterval(liveInterval);
-    liveInterval = setInterval(fetchCount, 15000); // 15 секунд для отзывчивости счётчика
+    // Живой слушатель онлайна
+    connectionsRef.on('value', (snap) => {
+        const count = snap.numChildren() || 1;
+        const onlineElem = document.getElementById('online-count');
+        if (onlineElem) onlineElem.innerText = count;
+        console.log("[Firebase] Живой онлайн обновлен:", count);
+    });
 }
 
 function setSpeed(v, label) {
