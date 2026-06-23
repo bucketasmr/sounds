@@ -344,42 +344,7 @@ const sounds = [
     "color": "#9664ff",
     "cat": "Brushes"
   },
-  {
-    "file": "greybrush.mp3",
-    "img": "greybrush.png",
-    "name": {
-      "en": "Grey Brush",
-      "pt": "Pincel Cinза",
-      "ru": "Серая кисть",
-      "uk": "Сірий пензель"
-    },
-    "color": "#8c8c8c",
-    "cat": "Brushes"
-  },
-  {
-    "file": "pinksoftbrush.mp3",
-    "img": "pinksoftbrush.png",
-    "name": {
-      "en": "Soft Brush",
-      "pt": "Pincel Macio",
-      "ru": "Мягкая кисть",
-      "uk": "М’який пензель"
-    },
-    "color": "#ffb6c1",
-    "cat": "Brushes"
-  },
-  {
-    "file": "strawberry.mp3",
-    "img": "strawberry.png",
-    "name": {
-      "en": "Strawberry",
-      "pt": "Morango",
-      "ru": "Клубника",
-      "uk": "Полуниця"
-    },
-    "color": "#ff69b4"
-  },
-  {
+    {
     "file": "wax.mp3",
     "img": "wax.png",
     "name": {
@@ -389,17 +354,6 @@ const sounds = [
       "uk": "Віск"
     },
     "color": "#ffa500"
-  },
-  {
-    "file": "carrot.mp3",
-    "img": "carrot.png",
-    "name": {
-      "en": "Carrot",
-      "pt": "Cenoura",
-      "ru": "Морковь",
-      "uk": "Морква"
-    },
-    "color": "#ff8c00"
   },
   {
     "file": "choko.mp3",
@@ -414,18 +368,17 @@ const sounds = [
     "cat": "Tapping"
   },
   {
-    "file": "wood.mp3",
-    "img": "wood.png",
+    "file": "strawberry.mp3",
+    "img": "strawberry.png",
     "name": {
-      "en": "Wood",
-      "pt": "Madeira",
-      "ru": "Дерево",
-      "uk": "Дерево"
+      "en": "Strawberry",
+      "pt": "Morango",
+      "ru": "Клубника",
+      "uk": "Полуниця"
     },
-    "color": "#ffff00",
-    "cat": "Tapping"
+    "color": "#ff69b4"
   },
-  {
+    {
     "file": "oldphone.mp3",
     "img": "oldphone.png",
     "name": {
@@ -436,7 +389,56 @@ const sounds = [
     },
     "color": "#323232",
     "cat": "Tapping"
+  },
+    {
+    "file": "carrot.mp3",
+    "img": "carrot.png",
+    "name": {
+      "en": "Carrot",
+      "pt": "Cenoura",
+      "ru": "Морковь",
+      "uk": "Морква"
+    },
+    "color": "#ff8c00"
+  },
+    {
+    "file": "pinksoftbrush.mp3",
+    "img": "pinksoftbrush.png",
+    "name": {
+      "en": "Soft Brush",
+      "pt": "Pincel Macio",
+      "ru": "Мягкая кисть",
+      "uk": "М’який пензель"
+    },
+    "color": "#ffb6c1",
+    "cat": "Brushes"
+  },
+  {
+    "file": "greybrush.mp3",
+    "img": "greybrush.png",
+    "name": {
+      "en": "Grey Brush",
+      "pt": "Pincel Cinза",
+      "ru": "Серая кисть",
+      "uk": "Сірий пензель"
+    },
+    "color": "#8c8c8c",
+    "cat": "Brushes"
+  },
+
+  {
+    "file": "wood.mp3",
+    "img": "wood.png",
+    "name": {
+      "en": "Wood",
+      "pt": "Madeira",
+      "ru": "Дерево",
+      "uk": "Дерево"
+    },
+    "color": "#ffff00",
+    "cat": "Tapping"
   }
+
 ];
 
 const uiTL = {
@@ -825,7 +827,7 @@ function spawnSteam() {
           x: rect.left + Math.random() * rect.width,
           y: rect.top + rect.height * 0.7,
           vx: (Math.random() - 0.5) * 0.4,
-          vy: -(Math.random() * 0.6 + 0.4),
+          vy: -(Math.random() * 0.3 + 0.2),
           size: Math.random() * 15 + 10,
           alpha: Math.random() * 0.3 + 0.2,
           growth: Math.random() * 0.1 + 0.05,
@@ -855,7 +857,7 @@ function draw() {
       p.x += p.vx;
       p.y += p.vy;
       p.size += p.growth;
-      p.alpha -= 0.003;
+      p.alpha -= 0.0005;
 
       if (p.alpha <= 0) {
         steamParticles.splice(i, 1);
